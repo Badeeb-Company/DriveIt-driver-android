@@ -210,6 +210,17 @@ public class LoginFragment extends Fragment {
                                 // Success login
                                 // Move to next screen --> Main Activity
                                 MainActivity.mdriver = jsonResponse.getUser();
+
+                                // Move to avialability fragment
+                                AvialabilityFragment avialabilityFragment = new AvialabilityFragment();
+                                FragmentManager fragmentManager = getFragmentManager();
+                                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+                                fragmentTransaction.add(R.id.main_frame, avialabilityFragment, avialabilityFragment.TAG);
+
+                                fragmentTransaction.addToBackStack(TAG);
+
+                                fragmentTransaction.commit();
                             }
                             else {
                                 // Invalid login

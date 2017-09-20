@@ -35,7 +35,7 @@ import java.util.Map;
 public class MainActivity extends AppCompatActivity {
 
     // Logging Purpose
-    private final String TAG = MainActivity.class.getSimpleName();
+    public static final String TAG = MainActivity.class.getSimpleName();
 
     // Class attributes
     private Toolbar mtoolbar;
@@ -113,13 +113,17 @@ public class MainActivity extends AppCompatActivity {
 
         try {
 
+            JsonLogout request = new JsonLogout();
+
             // Create Gson object
             GsonBuilder gsonBuilder = new GsonBuilder();
             gsonBuilder.excludeFieldsWithoutExposeAnnotation();
             final Gson gson = gsonBuilder.create();
 
+            JSONObject jsonObject = new JSONObject(gson.toJson(request));
+
             // Call user login service
-            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, null,
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
 
                     new Response.Listener<JSONObject>() {
 
@@ -168,7 +172,7 @@ public class MainActivity extends AppCompatActivity {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
 
-                                JsonLogin jsonResponse = gson.fromJson(responseData, JsonLogin.class);
+                                JsonLogout jsonResponse = gson.fromJson(responseData, JsonLogout.class);
 
                                 Log.d(TAG, "logout - Error Status: " + jsonResponse.getJsonMeta().getStatus());
                                 Log.d(TAG, "logout - Error Message: " + jsonResponse.getJsonMeta().getMessage());
@@ -189,6 +193,9 @@ public class MainActivity extends AppCompatActivity {
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
                     headers.put("Authorization", "Token token=" + MainActivity.mdriver.getToken());
+
+                    Log.d(TAG, "logout - getHeaders_Authorization: " + "Token token=" + MainActivity.mdriver.getToken());
+
                     return headers;
                 }
             };
