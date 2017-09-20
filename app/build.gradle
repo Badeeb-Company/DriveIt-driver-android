@@ -35,8 +35,10 @@ dependencies {
     compile 'com.google.firebase:firebase-database:10.0.1'
     compile 'org.parceler:parceler-api:1.1.8'
     compile 'com.android.support:support-v4:26.+'
+    compile 'com.github.bumptech.glide:glide:3.8.0'
     testCompile 'junit:junit:4.12'
     annotationProcessor 'org.parceler:parceler:1.1.8'
+
 }
 
 

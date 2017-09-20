@@ -1,13 +1,16 @@
 package com.badeeb.driveit.driver.fragment;
 
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.Menu;
+import android.view.MenuInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AutoCompleteTextView;
@@ -23,6 +26,7 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.badeeb.driveit.driver.MainActivity;
 import com.badeeb.driveit.driver.R;
 import com.badeeb.driveit.driver.model.JsonLogin;
 import com.badeeb.driveit.driver.model.User;
@@ -47,10 +51,10 @@ public class LoginFragment extends Fragment {
     public static final String TAG = LoginFragment.class.getSimpleName();
 
     // Class Attributes
-    private User driver;
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
     private View mProgressView;
+    private Toolbar mToolbar;
 
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/driver/login";
@@ -75,11 +79,24 @@ public class LoginFragment extends Fragment {
         return view;
     }
 
+    @Override
+    public void onPrepareOptionsMenu(Menu menu) {
+        Log.d(TAG, "onPrepareOptionsMenu - Start");
+
+        super.onPrepareOptionsMenu(menu);
+
+        MenuItem logout = menu.findItem(R.id.nav_logout);
+        logout.setVisible(false);
+
+        Log.d(TAG, "onPrepareOptionsMenu - End");
+    }
+
+
     private void init(View view) {
         Log.d(TAG, "init - Start");
 
         // Attributes Initialization
-        this.driver = new User();
+        MainActivity.mdriver = new User();
         // Email
         this.mEmailView = (AutoCompleteTextView) view.findViewById(R.id.email);
         // Password
@@ -89,6 +106,9 @@ public class LoginFragment extends Fragment {
 
         // Setup listeners
         setupListeners(view);
+
+        // Refresh menu toolbar
+        setHasOptionsMenu(true);
 
         Log.d(TAG, "init - End");
     }
@@ -109,8 +129,8 @@ public class LoginFragment extends Fragment {
                 String userEmail = mEmailView.getText().toString();
                 String userPassword = mPasswordView.getText().toString();
 
-                driver.setEmail(userEmail);
-                driver.setPassword(userPassword);
+                MainActivity.mdriver.setEmail(userEmail);
+                MainActivity.mdriver.setPassword(userPassword);
 
                 // Check login using network call
                 login();
@@ -155,7 +175,7 @@ public class LoginFragment extends Fragment {
         try {
 
             JsonLogin request = new JsonLogin();
-            request.setUser(driver);
+            request.setUser(MainActivity.mdriver);
 
             // Create Gson object
             GsonBuilder gsonBuilder = new GsonBuilder();
@@ -189,7 +209,7 @@ public class LoginFragment extends Fragment {
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success login
                                 // Move to next screen --> Main Activity
-
+                                MainActivity.mdriver = jsonResponse.getUser();
                             }
                             else {
                                 // Invalid login

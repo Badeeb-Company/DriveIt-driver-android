@@ -1,19 +1,36 @@
 package com.badeeb.driveit.driver;
 
+import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
+import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.ServerError;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.badeeb.driveit.driver.fragment.LoginFragment;
+import com.badeeb.driveit.driver.model.JsonLogin;
+import com.badeeb.driveit.driver.model.JsonLogout;
+import com.badeeb.driveit.driver.model.User;
+import com.badeeb.driveit.driver.network.MyVolley;
+import com.badeeb.driveit.driver.shared.AppPreferences;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
-import org.parceler.Parcels;
+import org.json.JSONObject;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,6 +41,8 @@ public class MainActivity extends AppCompatActivity {
     private Toolbar mtoolbar;
     private FragmentManager mFragmentManager;
     private MenuItem mlogoutItem;
+
+    public static User mdriver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +108,99 @@ public class MainActivity extends AppCompatActivity {
 
     private void logout() {
         Log.d(TAG, "logout - Start");
+
+        String url = AppPreferences.BASE_URL + "/logout";
+
+        try {
+
+            // Create Gson object
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            gsonBuilder.excludeFieldsWithoutExposeAnnotation();
+            final Gson gson = gsonBuilder.create();
+
+            // Call user login service
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, null,
+
+                    new Response.Listener<JSONObject>() {
+
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            // Response Handling
+                            Log.d(TAG, "logout - onResponse - Start");
+
+                            Log.d(TAG, "logout - onResponse - Json Response: " + response.toString());
+
+                            String responseData = response.toString();
+
+                            JsonLogout jsonResponse = gson.fromJson(responseData, JsonLogout.class);
+
+                            Log.d(TAG, "logout - onResponse - Status: " + jsonResponse.getJsonMeta().getStatus());
+                            Log.d(TAG, "logout - onResponse - Message: " + jsonResponse.getJsonMeta().getMessage());
+
+                            // check status  code of response
+                            // Success login
+                            // Clear callback stack
+                            mFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+
+                            // Move to next screen --> Login fragment
+                            LoginFragment loginFragment = new LoginFragment();
+
+                            FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
+
+                            fragmentTransaction.add(R.id.main_frame, loginFragment, loginFragment.TAG);
+
+                            fragmentTransaction.commit();
+
+
+
+                            Log.d(TAG, "logout - onResponse - End");
+                        }
+                    },
+
+                    new Response.ErrorListener() {
+
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            // Network Error Handling
+                            Log.d(TAG, "logout - onErrorResponse: " + error.toString());
+
+                            if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
+                                NetworkResponse response = error.networkResponse;
+                                String responseData = new String(response.data);
+
+                                JsonLogin jsonResponse = gson.fromJson(responseData, JsonLogin.class);
+
+                                Log.d(TAG, "logout - Error Status: " + jsonResponse.getJsonMeta().getStatus());
+                                Log.d(TAG, "logout - Error Message: " + jsonResponse.getJsonMeta().getMessage());
+
+                                Toast.makeText(getApplicationContext(), jsonResponse.getJsonMeta().getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+
+                        }
+                    }
+            ) {
+
+                /**
+                 * Passing some request headers
+                 */
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    HashMap<String, String> headers = new HashMap<String, String>();
+                    headers.put("Content-Type", "application/json; charset=utf-8");
+                    headers.put("Accept", "*");
+                    headers.put("Authorization", "Token token=" + MainActivity.mdriver.getToken());
+                    return headers;
+                }
+            };
+
+            // Adding retry policy to request
+            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(AppPreferences.VOLLEY_TIME_OUT, AppPreferences.VOLLEY_RETRY_COUNTER, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+            MyVolley.getInstance(this).addToRequestQueue(jsonObjectRequest);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         Log.d(TAG, "logout - End");
     }

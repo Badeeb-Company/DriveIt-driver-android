@@ -21,6 +21,7 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.badeeb.driveit.driver.MainActivity;
 import com.badeeb.driveit.driver.R;
 import com.badeeb.driveit.driver.model.JsonSignUp;
 import com.badeeb.driveit.driver.model.User;
@@ -45,7 +46,6 @@ public class SignupFragment extends Fragment {
     public static final String TAG = SignupFragment.class.getSimpleName();
 
     // Class Attributes
-    private User user;
 
     private View mProgressView;
 
@@ -79,7 +79,7 @@ public class SignupFragment extends Fragment {
         Log.d(TAG, "init - Start");
 
         // Attributes initialization
-        this.user = new User();
+        MainActivity.mdriver = new User();
 
         this.mProgressView = view.findViewById(R.id.progressBar);
 
@@ -109,11 +109,11 @@ public class SignupFragment extends Fragment {
                 EditText phone = (EditText) view.findViewById(R.id.phone);
                 RoundedImageView profileImage = (RoundedImageView) view.findViewById(R.id.profile_image);
 
-                user.setName(name.getText().toString());
-                user.setEmail(email.getText().toString());
-                user.setPassword(password.getText().toString());
-                user.setPhotoUrl("http://solarviews.com/raw/earth/earthafr.jpg"); // to be changed
-                user.setPhoneNumber(phone.getText().toString());
+                MainActivity.mdriver.setName(name.getText().toString());
+                MainActivity.mdriver.setEmail(email.getText().toString());
+                MainActivity.mdriver.setPassword(password.getText().toString());
+                MainActivity.mdriver.setPhotoUrl("http://solarviews.com/raw/earth/earthafr.jpg"); // to be changed
+                MainActivity.mdriver.setPhoneNumber(phone.getText().toString());
 
                 // Check signup using network call
                 signup();
@@ -145,7 +145,7 @@ public class SignupFragment extends Fragment {
         try {
 
             JsonSignUp request = new JsonSignUp();
-            request.setUser(user);
+            request.setUser(MainActivity.mdriver);
 
             // Create Gson object
             GsonBuilder gsonBuilder = new GsonBuilder();
