@@ -25,6 +25,10 @@ public class AppPreferences {
     public static final String TRIP_ACCEPTED = "accepted";
     public static final String TRIP_REJECTED = "notServed";
 
+    // Location updates constants
+    public static final int UPDATE_TIME = 5000;    // Millisecoonds
+    public static final int UPDATE_DISTANCE = 0;
+
     // Shared Preferences Keys
 
     public static SharedPreferences getAppPreferences(Context context) {
