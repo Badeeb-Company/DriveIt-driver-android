@@ -10,6 +10,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -20,10 +21,10 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.badeeb.driveit.client.model.Trip;
 import com.badeeb.driveit.driver.MainActivity;
 import com.badeeb.driveit.driver.R;
 import com.badeeb.driveit.driver.model.JsonRequestTrip;
+import com.badeeb.driveit.driver.model.Trip;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.google.gson.Gson;
@@ -70,6 +71,19 @@ public class RequestDialogFragment extends DialogFragment {
 
         // Initialize Attributes
         this.mtrip = Parcels.unwrap(getArguments().getParcelable("trip"));
+
+        // Publish values into dialog
+        TextView tvName = view.findViewById(R.id.tvName);
+        tvName.setText(mtrip.getClient_name());
+
+        TextView tvLocation = view.findViewById(R.id.tvLocation);
+        tvLocation.setText(mtrip.getClient_address());
+
+        TextView tvTimeToArrive = view.findViewById(R.id.tvTimeToArrive);
+        tvTimeToArrive.setText(mtrip.getTime_to_arrive()+"");
+
+        TextView tvDistanceToArrive = view.findViewById(R.id.tvDistanceToArrive);
+        tvDistanceToArrive.setText(mtrip.getDistance_to_arrive()+"");
 
         // Setup Listeners
         setupListeners(view);

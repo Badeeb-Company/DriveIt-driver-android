@@ -14,6 +14,7 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -26,12 +27,16 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.badeeb.driveit.client.model.Trip;
 import com.badeeb.driveit.driver.MainActivity;
 import com.badeeb.driveit.driver.R;
+import com.badeeb.driveit.driver.model.Trip;
 import com.badeeb.driveit.driver.shared.AppPreferences;
+import com.badeeb.driveit.driver.shared.FirebaseManager;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import org.parceler.Parcels;
 
@@ -54,9 +59,11 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
     private final int LOCATION_PERMISSION = 100;
     private Location mcurrentLocation;
     private LocationManager mlocationManager;
+    private RequestDialogFragment mrequestDialogFragment;
+    private ValueEventListener mtripEventListener;
 
     // Firebase database reference
-    private DatabaseReference mDatabase;
+    private FirebaseManager mDatabase;
 
     public AvialabilityFragment() {
         // Required empty public constructor
@@ -93,7 +100,7 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         Log.d(TAG, "init - Start");
 
         // Initiate firebase realtime - database
-        this.mDatabase = FirebaseDatabase.getInstance().getReference();
+        this.mDatabase = new FirebaseManager();
 
         mlocationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
 
@@ -178,7 +185,8 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         }
 
         // Set Firebase database Listener for trip
-
+        // Create listener on firebase realtime -
+        mtripEventListener = createValueEventListener();
 
         Log.d(TAG, "setupListeners - End");
     }
@@ -187,20 +195,13 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         Log.d(TAG, "setDriverOnline - Start");
 
         // Put Driver under firebase realtime database
-        DatabaseReference mRef = mDatabase.getDatabase().getReference("drivers");
-        mRef.child(MainActivity.mdriver.getId()+"").child("state").setValue("available");
+        mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "state").setValue("available");
 
-        RequestDialogFragment requestDialogFragment = new RequestDialogFragment();
-        Trip trip = new Trip();
-        trip.setId(2);
-        Bundle bundle = new Bundle();
-        bundle.putParcelable("trip", Parcels.wrap(trip));
-        requestDialogFragment.setArguments(bundle);
-        requestDialogFragment.setCancelable(false);
+        DatabaseReference mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
 
-        FragmentManager fragmentManager = getFragmentManager();
-        requestDialogFragment.setTargetFragment(AvialabilityFragment.this, DIALOG_RESULT);
-        requestDialogFragment.show(fragmentManager, requestDialogFragment.TAG);
+        // Start Listening for Firebase
+        mtripEventListener = createValueEventListener();
+        mRef.addValueEventListener(mtripEventListener);
 
         Log.d(TAG, "setDriverOnline - End");
     }
@@ -209,9 +210,13 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
     private void setDriverOffline() {
         Log.d(TAG, "setDriverOffline - Start");
 
+        // Stop listening
+        DatabaseReference mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
+        mRef.removeEventListener(mtripEventListener);
+
         // Remove Driver from firebase realtime database
-        DatabaseReference mRef = mDatabase.getDatabase().getReference("drivers");
-        mRef.child(MainActivity.mdriver.getId()+"").removeValue();
+        mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"");
+        mRef.removeValue();
 
         Log.d(TAG, "setDriverOffline - End");
     }
@@ -350,7 +355,7 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         mcurrentLocation = location;
 
         // Put firebase realtime database with current location
-        DatabaseReference mRef = mDatabase.getDatabase().getReference("locations");
+        DatabaseReference mRef = mDatabase.createChildReference("locations");
         mRef.child("drivers").child(MainActivity.mdriver.getId()+"").child("lat").setValue(mcurrentLocation.getLatitude());
         mRef.child("drivers").child(MainActivity.mdriver.getId()+"").child("long").setValue(mcurrentLocation.getLongitude());
 
@@ -383,4 +388,48 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
 
         Log.d(TAG, "onGpsStatusChanged - End");
     }
+
+
+    private ValueEventListener createValueEventListener() {
+        return new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Log.d(TAG, "createValueEventListener - mdatabase_onDataChange - Start");
+
+                if (dataSnapshot.getValue() != null) {
+                    Trip fdbTrip = dataSnapshot.getValue(Trip.class);
+
+                    if (fdbTrip.getState().equals(AppPreferences.TRIP_PENDING)) {
+
+                        mrequestDialogFragment = new RequestDialogFragment();
+                        Bundle bundle = new Bundle();
+                        bundle.putParcelable("trip", Parcels.wrap(fdbTrip));
+                        mrequestDialogFragment.setArguments(bundle);
+                        mrequestDialogFragment.setCancelable(false);
+
+                        FragmentManager fragmentManager = getFragmentManager();
+                        mrequestDialogFragment.setTargetFragment(AvialabilityFragment.this, DIALOG_RESULT);
+                        mrequestDialogFragment.show(fragmentManager, mrequestDialogFragment.TAG);
+                    }
+                    else {
+
+                        if (mrequestDialogFragment != null && mrequestDialogFragment.isVisible()) {
+                            // close it
+                            mrequestDialogFragment.dismiss();
+                        }
+
+                    }
+
+                }
+
+                Log.d(TAG, "createValueEventListener - mdatabase_onDataChange - End");
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
+    }
+
 }

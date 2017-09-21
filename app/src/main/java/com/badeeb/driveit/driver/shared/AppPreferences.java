@@ -24,6 +24,7 @@ public class AppPreferences {
     // Trip constants
     public static final String TRIP_ACCEPTED = "accepted";
     public static final String TRIP_REJECTED = "notServed";
+    public static final String TRIP_PENDING = "pending";
 
     // Location updates constants
     public static final int UPDATE_TIME = 5000;    // Millisecoonds

@@ -1,4 +1,4 @@
-package com.badeeb.driveit.client.model;
+package com.badeeb.driveit.driver.model;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -41,13 +41,13 @@ public class Trip {
 
     // Firebase Database Properties
     private double distance_to_arrive;
-    private String driver_address;
-    private int driver_id;
-    private String driver_image_url;
-    private double driver_lat;
-    private double driver_long;
-    private String driver_name;
-    private String driver_phone;
+    private String client_address;
+    private int client_id;
+    private String client_image_url;
+    private double client_lat;
+    private double client_long;
+    private String client_name;
+    private String client_phone;
     private double time_to_arrive;
 
     public Trip() {
@@ -135,67 +135,67 @@ public class Trip {
         this.distance_to_arrive = distance_to_arrive;
     }
 
-    public String getDriver_address() {
-        return driver_address;
-    }
-
-    public void setDriver_address(String driver_address) {
-        this.driver_address = driver_address;
-    }
-
-    public int getDriver_id() {
-        return driver_id;
-    }
-
-    public void setDriver_id(int driver_id) {
-        this.driver_id = driver_id;
-    }
-
-    public String getDriver_image_url() {
-        return driver_image_url;
-    }
-
-    public void setDriver_image_url(String driver_image_url) {
-        this.driver_image_url = driver_image_url;
-    }
-
-    public double getDriver_lat() {
-        return driver_lat;
-    }
-
-    public void setDriver_lat(double driver_lat) {
-        this.driver_lat = driver_lat;
-    }
-
-    public double getDriver_long() {
-        return driver_long;
-    }
-
-    public void setDriver_long(double driver_long) {
-        this.driver_long = driver_long;
-    }
-
-    public String getDriver_name() {
-        return driver_name;
-    }
-
-    public void setDriver_name(String driver_name) {
-        this.driver_name = driver_name;
-    }
-
-    public String getDriver_phone() {
-        return driver_phone;
-    }
-
-    public void setDriver_phone(String driver_phone) {
-        this.driver_phone = driver_phone;
-    }
-
     public double getTime_to_arrive() {
         return time_to_arrive;
     }
 
     public void setTime_to_arrive(double time_to_arrive) {
         this.time_to_arrive = time_to_arrive;
+    }
+
+    public String getClient_address() {
+        return client_address;
+    }
+
+    public void setClient_address(String client_address) {
+        this.client_address = client_address;
+    }
+
+    public int getClient_id() {
+        return client_id;
+    }
+
+    public void setClient_id(int client_id) {
+        this.client_id = client_id;
+    }
+
+    public String getClient_image_url() {
+        return client_image_url;
+    }
+
+    public void setClient_image_url(String client_image_url) {
+        this.client_image_url = client_image_url;
+    }
+
+    public double getClient_lat() {
+        return client_lat;
+    }
+
+    public void setClient_lat(double client_lat) {
+        this.client_lat = client_lat;
+    }
+
+    public double getClient_long() {
+        return client_long;
+    }
+
+    public void setClient_long(double client_long) {
+        this.client_long = client_long;
+    }
+
+    public String getClient_name() {
+        return client_name;
+    }
+
+    public void setClient_name(String client_name) {
+        this.client_name = client_name;
+    }
+
+    public String getClient_phone() {
+        return client_phone;
+    }
+
+    public void setClient_phone(String client_phone) {
+        this.client_phone = client_phone;
     }
 }
