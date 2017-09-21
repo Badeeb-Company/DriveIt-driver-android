@@ -5,6 +5,8 @@ import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -166,6 +168,18 @@ public class RequestDialogFragment extends DialogFragment {
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success Ride Acceptance
                                 avialabilityFragment.showRideAcceptMessage(true);
+
+                                TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
+                                Bundle bundle = new Bundle();
+                                bundle.putParcelable("trip", Parcels.wrap(mtrip));
+                                tripDetailsFragment.setArguments(bundle);
+
+                                FragmentManager fragmentManager = avialabilityFragment.getFragmentManager();
+                                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+                                fragmentTransaction.add(R.id.main_frame, tripDetailsFragment, tripDetailsFragment.TAG);
+                                fragmentTransaction.commit();
+
                             }
                             else {
                                 // Invalid Ride Acceptance

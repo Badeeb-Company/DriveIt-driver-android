@@ -104,6 +104,12 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
 
         mlocationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
 
+        if (AppPreferences.isOnline) {
+            setDriverUIOnline(view);
+        }
+        else {
+            setDriverUIOffline(view);
+        }
 
         // Refresh menu toolbar
         setHasOptionsMenu(true);
@@ -135,18 +141,9 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
                 setDriverOnline();
 
                 // Change image to online
-                ImageView ivOffline = view.findViewById(R.id.ivOffline);
-                ivOffline.setVisibility(View.GONE);
+                setDriverUIOnline(view);
 
-                ImageView ivOnline = view.findViewById(R.id.ivOnline);
-                ivOnline.setVisibility(View.VISIBLE);
-
-                // Change text
-                TextView tvSetStatusOffline = view.findViewById(R.id.tvSetStatusOffline);
-                tvSetStatusOffline.setVisibility(View.VISIBLE);
-
-                TextView tvSetStatusOnline = view.findViewById(R.id.tvSetStatusOnline);
-                tvSetStatusOnline.setVisibility(View.GONE);
+                AppPreferences.isOnline = true;
 
                 Log.d(TAG, "setupListeners - tvSetStatusOnline_onClick - End");
             }
@@ -162,18 +159,9 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
                 setDriverOffline();
 
                 // Change image to offline
-                ImageView ivOffline = view.findViewById(R.id.ivOffline);
-                ivOffline.setVisibility(View.VISIBLE);
+                setDriverUIOffline(view);
 
-                ImageView ivOnline = view.findViewById(R.id.ivOnline);
-                ivOnline.setVisibility(View.GONE);
-
-                // Change text
-                TextView tvSetStatusOffline = view.findViewById(R.id.tvSetStatusOffline);
-                tvSetStatusOffline.setVisibility(View.GONE);
-
-                TextView tvSetStatusOnline = view.findViewById(R.id.tvSetStatusOnline);
-                tvSetStatusOnline.setVisibility(View.VISIBLE);
+                AppPreferences.isOnline = false;
 
                 Log.d(TAG, "setupListeners - tvSetStatusOffline_onClick - End");
             }
@@ -189,6 +177,58 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         mtripEventListener = createValueEventListener();
 
         Log.d(TAG, "setupListeners - End");
+    }
+
+    private void setDriverUIOffline(View view) {
+        Log.d(TAG, "setDriverUIOffline - Start");
+
+        ImageView ivOffline = view.findViewById(R.id.ivOffline);
+        ivOffline.setVisibility(View.VISIBLE);
+
+        ImageView ivOnline = view.findViewById(R.id.ivOnline);
+        ivOnline.setVisibility(View.GONE);
+
+        // Change text
+        TextView tvOfflineStatusText = view.findViewById(R.id.tvOfflineStatusText);
+        tvOfflineStatusText.setVisibility(View.VISIBLE);
+
+        TextView tvOnlineStatusText = view.findViewById(R.id.tvOnlineStatusText);
+        tvOnlineStatusText.setVisibility(View.GONE);
+
+        // Change Button text
+        TextView tvSetStatusOffline = view.findViewById(R.id.tvSetStatusOffline);
+        tvSetStatusOffline.setVisibility(View.GONE);
+
+        TextView tvSetStatusOnline = view.findViewById(R.id.tvSetStatusOnline);
+        tvSetStatusOnline.setVisibility(View.VISIBLE);
+
+        Log.d(TAG, "setDriverUIOffline - End");
+    }
+
+    private void setDriverUIOnline(View view) {
+        Log.d(TAG, "setDriverUIOnline - Start");
+
+        ImageView ivOffline = view.findViewById(R.id.ivOffline);
+        ivOffline.setVisibility(View.GONE);
+
+        ImageView ivOnline = view.findViewById(R.id.ivOnline);
+        ivOnline.setVisibility(View.VISIBLE);
+
+        // Change text
+        TextView tvOfflineStatusText = view.findViewById(R.id.tvOfflineStatusText);
+        tvOfflineStatusText.setVisibility(View.GONE);
+
+        TextView tvOnlineStatusText = view.findViewById(R.id.tvOnlineStatusText);
+        tvOnlineStatusText.setVisibility(View.VISIBLE);
+
+        // Change Button text
+        TextView tvSetStatusOffline = view.findViewById(R.id.tvSetStatusOffline);
+        tvSetStatusOffline.setVisibility(View.VISIBLE);
+
+        TextView tvSetStatusOnline = view.findViewById(R.id.tvSetStatusOnline);
+        tvSetStatusOnline.setVisibility(View.GONE);
+
+        Log.d(TAG, "setDriverUIOnline - End");
     }
 
     private void setDriverOnline() {

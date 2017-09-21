@@ -14,7 +14,7 @@ public class JsonRequestTrip {
     private JsonMeta jsonMeta;
 
     @Expose(serialize = true, deserialize = false)
-    @SerializedName("trip")
+    @SerializedName("trip_id")
     private int tripId;
 
     public JsonRequestTrip() {
