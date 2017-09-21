@@ -25,6 +25,10 @@
     <string name="offline_msg">Offline... Not avialable for request</string>
     <string name="online_msg">Online... Available for requests</string>
     <string name="online_bttn_msg">Set me online</string>
+    <string name="offline_bttn_msg">Set me offline</string>
+    <string name="accept">Accept</string>
+    <string name="reject">Reject</string>
+    <string name="new_request_msg">You have a new ride request</string>
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>

@@ -47,12 +47,21 @@
         </LinearLayout>
 
         <TextView
-            android:id="@+id/tvSetStatus"
+            android:id="@+id/tvSetStatusOnline"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:text="@string/online_bttn_msg"
             android:textColor="#0000FF" />
+
+        <TextView
+            android:id="@+id/tvSetStatusOffline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/offline_bttn_msg"
+            android:textColor="#0000FF"
+            android:visibility="gone"/>
 
     </LinearLayout>
 
