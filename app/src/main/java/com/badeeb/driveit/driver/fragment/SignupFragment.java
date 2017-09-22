@@ -1,6 +1,7 @@
 package com.badeeb.driveit.driver.fragment;
 
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -27,6 +28,7 @@ import com.badeeb.driveit.driver.model.JsonSignUp;
 import com.badeeb.driveit.driver.model.User;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
+import com.badeeb.driveit.driver.shared.UiUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.makeramen.roundedimageview.RoundedImageView;
@@ -47,8 +49,7 @@ public class SignupFragment extends Fragment {
 
     // Class Attributes
 
-    private View mProgressView;
-
+    private ProgressDialog progressDialog;
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/driver";
 
@@ -81,7 +82,7 @@ public class SignupFragment extends Fragment {
         // Attributes initialization
         MainActivity.mdriver = new User();
 
-        this.mProgressView = view.findViewById(R.id.progressBar);
+        progressDialog = UiUtils.createProgressDialog(getActivity());
 
         // Setup listeners
         setupListeners(view);
@@ -101,7 +102,7 @@ public class SignupFragment extends Fragment {
                 Log.d(TAG, "setupListeners - signUpBttn_onClick - Start");
 
                 // Enable Progress bar
-                mProgressView.setVisibility(View.VISIBLE);
+                progressDialog.show();
 
                 EditText name = (EditText) view.findViewById(R.id.name);
                 EditText email = (EditText) view.findViewById(R.id.email);
@@ -195,7 +196,7 @@ public class SignupFragment extends Fragment {
                             }
 
                             // Disable Progress bar
-                            mProgressView.setVisibility(View.GONE);
+                            progressDialog.dismiss();
 
                             Log.d(TAG, "signup - onResponse - End");
                         }
@@ -223,7 +224,7 @@ public class SignupFragment extends Fragment {
                                 Toast.makeText(getContext(), jsonResponse.getJsonMeta().getMessage(), Toast.LENGTH_SHORT).show();
                             }
                             // Disable Progress bar
-                            mProgressView.setVisibility(View.GONE);
+                            progressDialog.dismiss();
                         }
                     }
             ) {

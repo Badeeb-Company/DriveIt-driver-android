@@ -68,14 +68,7 @@ public class MainActivity extends AppCompatActivity {
 
         // Load Login Fragment inside Main activity
         // Fragment creation
-        LoginFragment loginFragment = new LoginFragment();
-
-        FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
-
-        fragmentTransaction.add(R.id.main_frame, loginFragment, loginFragment.TAG);
-
-        fragmentTransaction.commit();
-
+        goToLogin();
 
         Log.d(TAG, "init - End");
     }
@@ -94,7 +87,8 @@ public class MainActivity extends AppCompatActivity {
             public boolean onMenuItemClick(MenuItem menuItem) {
                 Log.d(TAG, "setupListeners - mlogoutItem_onMenuItemClick - Start");
 
-                logout();
+//                logout();
+                goToLogin();
 
                 Log.d(TAG, "setupListeners - mlogoutItem_onMenuItemClick - End");
                 return false;
@@ -103,6 +97,13 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(TAG, "onCreateOptionsMenu - End");
         return true;
+    }
+
+    private void goToLogin(){
+        LoginFragment loginFragment = new LoginFragment();
+        FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.main_frame, loginFragment, loginFragment.TAG);
+        fragmentTransaction.commit();
     }
 
 

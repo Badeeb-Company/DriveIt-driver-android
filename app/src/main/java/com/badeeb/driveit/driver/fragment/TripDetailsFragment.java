@@ -104,8 +104,8 @@ public class TripDetailsFragment extends Fragment {
         Glide.with(getContext()).load(mtrip.getClient_image_url()).into(clientPhoto);
         tClientName.setText(mtrip.getClient_name());
         tClientPhone.setText(mtrip.getClient_phone());
-        tTimeToArrive.setText(mtrip.getTime_to_arrive() + "");
-        tDriverDistance.setText(mtrip.getDistance_to_arrive() + "");
+        tTimeToArrive.setText((int)(mtrip.getTime_to_arrive()/60) + " minutes");
+        tDriverDistance.setText(mtrip.getDistance_to_arrive()/1000 + " kilometers");
 
         // Setup Listeners
         setupListeners(view);

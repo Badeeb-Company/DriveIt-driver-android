@@ -1,6 +1,9 @@
 package com.badeeb.driveit.driver.fragment;
 
 
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -13,6 +16,7 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
@@ -32,6 +36,7 @@ import com.badeeb.driveit.driver.model.JsonLogin;
 import com.badeeb.driveit.driver.model.User;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
+import com.badeeb.driveit.driver.shared.UiUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -53,8 +58,8 @@ public class LoginFragment extends Fragment {
     // Class Attributes
     private AutoCompleteTextView mEmailView;
     private EditText mPasswordView;
-    private View mProgressView;
     private Toolbar mToolbar;
+    private ProgressDialog progressDialog;
 
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/driver/login";
@@ -102,7 +107,7 @@ public class LoginFragment extends Fragment {
         // Password
         this.mPasswordView = (EditText) view.findViewById(R.id.password);
         // Progress bar
-        this.mProgressView = view.findViewById(R.id.progressBar);
+        progressDialog = UiUtils.createProgressDialog(getActivity());
 
         // Setup listeners
         setupListeners(view);
@@ -124,7 +129,7 @@ public class LoginFragment extends Fragment {
                 Log.d(TAG, "setupListeners - signIn_onclick - Start");
 
                 // Enable Progress bar
-                mProgressView.setVisibility(View.VISIBLE);
+                progressDialog.show();
 
                 String userEmail = mEmailView.getText().toString();
                 String userPassword = mPasswordView.getText().toString();
@@ -173,7 +178,6 @@ public class LoginFragment extends Fragment {
         Log.d(TAG, "login - Start");
 
         try {
-
             JsonLogin request = new JsonLogin();
             request.setUser(MainActivity.mdriver);
 
@@ -211,6 +215,8 @@ public class LoginFragment extends Fragment {
                                 // Move to next screen --> Main Activity
                                 MainActivity.mdriver = jsonResponse.getUser();
 
+                                AppPreferences.setToken(getActivity(), MainActivity.mdriver.getToken());
+
                                 // Move to avialability fragment
                                 AvialabilityFragment avialabilityFragment = new AvialabilityFragment();
                                 FragmentManager fragmentManager = getFragmentManager();
@@ -218,17 +224,21 @@ public class LoginFragment extends Fragment {
 
                                 fragmentTransaction.add(R.id.main_frame, avialabilityFragment, avialabilityFragment.TAG);
 
-                                fragmentTransaction.addToBackStack(TAG);
-
                                 fragmentTransaction.commit();
+
+                                View view = getActivity().getCurrentFocus();
+                                if (view != null) {
+                                    InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                                }
                             }
                             else {
                                 // Invalid login
-                                Toast.makeText(getContext(), getString(R.string.login_error), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getContext(), getString(R.string.login_error), Toast.LENGTH_LONG).show();
                             }
 
                             // Disable progress bar
-                            mProgressView.setVisibility(View.GONE);
+                            progressDialog.dismiss();
 
                             Log.d(TAG, "login - onResponse - End");
                         }
@@ -254,7 +264,7 @@ public class LoginFragment extends Fragment {
                             }
 
                             // Disable progress bar
-                            mProgressView.setVisibility(View.GONE);
+                            progressDialog.dismiss();
 
                         }
                     }

@@ -82,10 +82,10 @@ public class RequestDialogFragment extends DialogFragment {
         tvLocation.setText(mtrip.getClient_address());
 
         TextView tvTimeToArrive = view.findViewById(R.id.tvTimeToArrive);
-        tvTimeToArrive.setText(mtrip.getTime_to_arrive()+"");
+        tvTimeToArrive.setText((int)(mtrip.getTime_to_arrive()/60) + " minutes");
 
         TextView tvDistanceToArrive = view.findViewById(R.id.tvDistanceToArrive);
-        tvDistanceToArrive.setText(mtrip.getDistance_to_arrive()+"");
+        tvDistanceToArrive.setText(mtrip.getDistance_to_arrive()/1000 + " kilometers");
 
         // Setup Listeners
         setupListeners(view);
@@ -129,7 +129,8 @@ public class RequestDialogFragment extends DialogFragment {
 
         String url = AppPreferences.BASE_URL + "/trip" + "/" + mtrip.getId() + "/accept ";
 
-        final AvialabilityFragment avialabilityFragment = (AvialabilityFragment) getTargetFragment();;
+        final AvialabilityFragment avialabilityFragment = (AvialabilityFragment) getTargetFragment();
+        ;
 
         try {
 
@@ -143,7 +144,7 @@ public class RequestDialogFragment extends DialogFragment {
 
             JSONObject jsonObject = new JSONObject(gson.toJson(request));
 
-            Log.d(TAG, "acceptRide - Json Request"+ gson.toJson(request));
+            Log.d(TAG, "acceptRide - Json Request" + gson.toJson(request));
 
             // Call user acceptRide service
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
@@ -180,8 +181,7 @@ public class RequestDialogFragment extends DialogFragment {
                                 fragmentTransaction.add(R.id.main_frame, tripDetailsFragment, tripDetailsFragment.TAG);
                                 fragmentTransaction.commit();
 
-                            }
-                            else {
+                            } else {
                                 // Invalid Ride Acceptance
                                 avialabilityFragment.showRideAcceptMessage(false);
                             }
@@ -262,7 +262,7 @@ public class RequestDialogFragment extends DialogFragment {
 
             JSONObject jsonObject = new JSONObject(gson.toJson(request));
 
-            Log.d(TAG, "rejectRide - Json Request"+ gson.toJson(request));
+            Log.d(TAG, "rejectRide - Json Request" + gson.toJson(request));
 
             // Call user acceptRide service
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
@@ -287,8 +287,7 @@ public class RequestDialogFragment extends DialogFragment {
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success Ride Acceptance
                                 avialabilityFragment.showRideRejectMessage(true);
-                            }
-                            else {
+                            } else {
                                 // Invalid Ride Acceptance
                                 avialabilityFragment.showRideRejectMessage(false);
                             }

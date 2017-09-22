@@ -1,20 +1,20 @@
 package com.badeeb.driveit.driver.fragment;
 
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.location.GnssMeasurementsEvent;
 import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.support.annotation.IntDef;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
-import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -22,7 +22,6 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,14 +34,12 @@ import com.badeeb.driveit.driver.shared.FirebaseManager;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
 import org.parceler.Parcels;
 
 import java.util.List;
 
-import static android.location.GpsStatus.GPS_EVENT_FIRST_FIX;
 import static android.location.GpsStatus.GPS_EVENT_STARTED;
 import static android.location.GpsStatus.GPS_EVENT_STOPPED;
 
@@ -61,6 +58,9 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
     private LocationManager mlocationManager;
     private RequestDialogFragment mrequestDialogFragment;
     private ValueEventListener mtripEventListener;
+    private boolean paused;
+    private boolean needsToShowDialog;
+    private boolean needsToDismissDialog;
 
     // Firebase database reference
     private FirebaseManager mDatabase;
@@ -258,6 +258,10 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"");
         mRef.removeValue();
 
+        DatabaseReference locationReference = mDatabase.createChildReference("locations", "drivers",
+                String.valueOf(MainActivity.mdriver.getId()));
+        locationReference.removeValue();
+
         Log.d(TAG, "setDriverOffline - End");
     }
 
@@ -304,24 +308,15 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // Location permission is required
             Log.d(TAG, "getCurrentLocation - Permission is not granted");
-
             // Show Alert to enable location service
             Toast.makeText(getContext(), "Grant location permission to APP", Toast.LENGTH_SHORT).show();
-
             // TODO: Show dialog to grant permissions and reload data after that
             requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION);
-        }
-
-        if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        } else {
             // Permission is granted now
             Log.d(TAG, "getCurrentLocation - Permission is granted");
-
-
-
             boolean isGPSEnabled = mlocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            boolean isNetworkEnabled = mlocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-
-            if (isGPSEnabled || isNetworkEnabled) {
+            if (isGPSEnabled) {
                 List<String> providers = mlocationManager.getProviders(true);
                 for (String provider : providers) {
                     mlocationManager.requestLocationUpdates(provider, 0, 0, this);
@@ -343,24 +338,39 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
                 mlocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, AppPreferences.UPDATE_TIME, AppPreferences.UPDATE_DISTANCE, this);
 
             } else {
-                // Error
-                Log.d(TAG, "getCurrentLocation - GPS and Network are not enabled");
-
-                // Show Alert to enable GPS
-                Toast.makeText(getContext(), getResources().getText(R.string.enable_gps), Toast.LENGTH_SHORT).show();
+                showSettingsDialog();
 
                 return null;
             }
 
         }
-        else {
-            // Location permission is required
-            Log.d(TAG, "getCurrentLocation - Permission is not granted so ask for it again");
-        }
 
         Log.d(TAG, "getCurrentLocation - End");
 
         return currentLocation;
+    }
+
+    private void showSettingsDialog() {
+        AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
+
+        alertDialog.setTitle("GPS Disabled");
+        alertDialog.setMessage("Please enable GPS to continue");
+
+        alertDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
+            }
+        });
+
+        alertDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                Toast.makeText(getActivity(), "You need to enable GPS first", Toast.LENGTH_LONG).show();
+                showSettingsDialog();
+            }
+        });
+
+        alertDialog.show();
     }
 
     @Override
@@ -373,9 +383,7 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
 
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 Log.d(TAG, "onRequestPermissionsResult - LOCATION_PERMISSION - Permission Granted");
-
                 getCurrentLocation();
-
             }
 
             Log.d(TAG, "onRequestPermissionsResult - LOCATION_PERMISSION - End");
@@ -424,6 +432,8 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         if (event == GPS_EVENT_STARTED) {
             Log.d(TAG, "onGpsStatusChanged - GPS Started");
             getCurrentLocation();
+        } else if (event == GPS_EVENT_STOPPED) {
+            showSettingsDialog();
         }
 
         Log.d(TAG, "onGpsStatusChanged - End");
@@ -447,15 +457,13 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
                         mrequestDialogFragment.setArguments(bundle);
                         mrequestDialogFragment.setCancelable(false);
 
-                        FragmentManager fragmentManager = getFragmentManager();
                         mrequestDialogFragment.setTargetFragment(AvialabilityFragment.this, DIALOG_RESULT);
-                        mrequestDialogFragment.show(fragmentManager, mrequestDialogFragment.TAG);
+                        showDialog();
                     }
                     else {
-
                         if (mrequestDialogFragment != null && mrequestDialogFragment.isVisible()) {
                             // close it
-                            mrequestDialogFragment.dismiss();
+                            dismissDialog();
                         }
 
                     }
@@ -470,6 +478,43 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
 
             }
         };
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        paused = true;
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        paused = false;
+        if(needsToShowDialog){
+            FragmentManager fragmentManager = getFragmentManager();
+            mrequestDialogFragment.show(fragmentManager, mrequestDialogFragment.TAG);
+            needsToShowDialog = false;
+        }
+        if(needsToDismissDialog){
+            mrequestDialogFragment.dismiss();
+        }
+    }
+
+    private void showDialog(){
+        if(paused){
+            needsToShowDialog = true;
+        } else {
+            FragmentManager fragmentManager = getFragmentManager();
+            mrequestDialogFragment.show(fragmentManager, mrequestDialogFragment.TAG);
+        }
+    }
+
+    private void dismissDialog(){
+        if(paused){
+            needsToDismissDialog = true;
+        } else {
+            mrequestDialogFragment.dismiss();
+        }
     }
 
 }
