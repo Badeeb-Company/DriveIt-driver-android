@@ -5,6 +5,8 @@
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <!-- Strings related to login -->
+    <string name="sign_in_txt">Sign in</string>
+    <string name="sign_up_txt">No account yet? Create one</string>
     <string name="prompt_email">Email</string>
     <string name="prompt_password">Password (optional)</string>
     <string name="action_sign_in">Sign in or register</string>

@@ -82,7 +82,7 @@ public class SignupFragment extends Fragment {
         // Attributes initialization
         MainActivity.mdriver = new User();
 
-        progressDialog = UiUtils.createProgressDialog(getActivity());
+		progressDialog = UiUtils.createProgressDialog(getActivity(), R.style.DialogTheme);
 
         // Setup listeners
         setupListeners(view);
