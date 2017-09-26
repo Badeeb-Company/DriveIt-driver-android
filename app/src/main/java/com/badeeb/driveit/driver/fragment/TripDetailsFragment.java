@@ -13,8 +13,6 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -29,8 +27,8 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.badeeb.driveit.driver.MainActivity;
 import com.badeeb.driveit.driver.R;
+import com.badeeb.driveit.driver.activity.MainActivity;
 import com.badeeb.driveit.driver.model.JsonRequestTrip;
 import com.badeeb.driveit.driver.model.Trip;
 import com.badeeb.driveit.driver.network.MyVolley;
@@ -53,7 +51,7 @@ import java.util.Map;
 public class TripDetailsFragment extends Fragment {
 
     // Logging Purpose
-    public static final String TAG = AvialabilityFragment.class.getSimpleName();
+    public static final String TAG = TripDetailsFragment.class.getSimpleName();
 
     // Class Attributes
     private Trip mtrip;
@@ -77,33 +75,25 @@ public class TripDetailsFragment extends Fragment {
         return view;
     }
 
-    @Override
-    public void onPrepareOptionsMenu(Menu menu) {
-        Log.d(TAG, "onPrepareOptionsMenu - Start");
-
-        super.onPrepareOptionsMenu(menu);
-
-        MenuItem logout = menu.findItem(R.id.nav_logout);
-        logout.setVisible(true);
-
-        Log.d(TAG, "onPrepareOptionsMenu - End");
-    }
-
     private void init(View view) {
         Log.d(TAG, "init - Start");
 
         this.mtrip = Parcels.unwrap(getArguments().getParcelable("trip"));
 
         // Initialize text fields with their correct values
-        RoundedImageView clientPhoto = view.findViewById(R.id.iProfileImage);
-        TextView tClientName = view.findViewById(R.id.tClientName);
-        TextView tClientPhone = view.findViewById(R.id.tClientPhone);
+        RoundedImageView driverPhoto = view.findViewById(R.id.iProfileImage);
+        TextView tDriverName = view.findViewById(R.id.tDriverName);
+        TextView tDriverPhone = view.findViewById(R.id.tDriverPhone);
         TextView tTimeToArrive = view.findViewById(R.id.tTimeToArrive);
         TextView tDriverDistance = view.findViewById(R.id.tDriverDistance);
 
-        Glide.with(getContext()).load(mtrip.getClient_image_url()).into(clientPhoto);
-        tClientName.setText(mtrip.getClient_name());
-        tClientPhone.setText(mtrip.getClient_phone());
+        Glide.with(getContext())
+                .load(mtrip.getClient_image_url())
+                .placeholder(R.drawable.def_usr_img)
+                .into(driverPhoto);
+
+        tDriverName.setText(mtrip.getClient_name());
+        tDriverPhone.setText(mtrip.getClient_phone());
         tTimeToArrive.setText((int)(mtrip.getTime_to_arrive()/60) + " minutes");
         tDriverDistance.setText(mtrip.getDistance_to_arrive()/1000 + " kilometers");
 
@@ -111,7 +101,7 @@ public class TripDetailsFragment extends Fragment {
         setupListeners(view);
 
         // Refresh menu toolbar
-        setHasOptionsMenu(true);
+        ((MainActivity) getActivity()).enbleNavigationView();
 
         Log.d(TAG, "init - End");
     }

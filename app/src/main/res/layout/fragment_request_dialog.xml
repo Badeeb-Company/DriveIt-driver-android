@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:minHeight="200dp"
     android:minWidth="300dp"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:layout_margin="8dp"
+    android:background="@color/white"
+    >
 
     <TextView
         android:layout_width="wrap_content"
@@ -108,15 +110,8 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <Button
-            android:id="@+id/bAccept"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_weight="1"
-            android:text="@string/accept" />
+        android:layout_height="wrap_content"
+        android:background="@color/light_gray">
 
         <Button
             android:id="@+id/bReject"
@@ -124,7 +119,21 @@
             android:layout_height="wrap_content"
             android:layout_gravity="center"
             android:layout_weight="1"
-            android:text="@string/reject" />
+            android:text="@string/reject"
+            android:background="@drawable/btn_white_rounded_corner"
+            android:textColor="@color/red"
+            android:layout_margin="4dp"
+            />
+
+        <Button
+            android:id="@+id/bAccept"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_weight="1"
+            android:layout_margin="4dp"
+            android:text="@string/accept" />
+
     </LinearLayout>
 
 </LinearLayout>

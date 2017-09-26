@@ -5,71 +5,39 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:padding="20dp"
-    android:background="@color/white"
+    android:background="@drawable/main_bk"
     android:clickable="true"
+    android:gravity="center"
     >
 
-    <LinearLayout
-        android:id="@+id/llWithoutTrip"
-        android:layout_width="match_parent"
+    <ImageView
+        android:layout_width="110dp"
+        android:layout_height="110dp"
+        android:id="@+id/ivOffline"
+        android:src="@drawable/offline"
+    />
+
+    <ImageView
+        android:layout_width="110dp"
+        android:layout_height="110dp"
+        android:id="@+id/ivOnline"
+        android:src="@drawable/online"
+        android:visibility="gone"
+        />
+
+    <TextView
+        android:id="@+id/tvOfflineStatusText"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:text="@string/offline_msg"
+        android:textSize="18sp"
+        android:visibility="gone"/>
 
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="170dp"
-            android:gravity="center">
-
-            <ImageView
-                android:id="@+id/ivOnline"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginRight="10dp"
-                android:src="@android:drawable/presence_online"
-                android:visibility="gone"/>
-
-            <ImageView
-                android:id="@+id/ivOffline"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginRight="10dp"
-                android:src="@android:drawable/presence_offline"
-                 />
-
-            <TextView
-                android:id="@+id/tvOfflineStatusText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/offline_msg" />
-
-            <TextView
-                android:id="@+id/tvOnlineStatusText"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/online_msg"
-                android:visibility="gone"/>
-
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tvSetStatusOnline"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="@string/online_bttn_msg"
-            android:textColor="#0000FF" />
-
-        <TextView
-            android:id="@+id/tvSetStatusOffline"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="@string/offline_bttn_msg"
-            android:textColor="#0000FF"
-            android:visibility="gone"/>
-
-    </LinearLayout>
+    <TextView
+        android:id="@+id/tvOnlineStatusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/online_msg"
+        android:visibility="gone"/>
 
 </LinearLayout>

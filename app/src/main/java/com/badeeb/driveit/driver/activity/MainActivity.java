@@ -1,12 +1,15 @@
-package com.badeeb.driveit.driver;
+package com.badeeb.driveit.driver.activity;
 
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.util.Log;
+import android.support.design.widget.NavigationView;
+import android.support.v4.view.GravityCompat;
+import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
@@ -18,6 +21,7 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.badeeb.driveit.driver.R;
 import com.badeeb.driveit.driver.fragment.LoginFragment;
 import com.badeeb.driveit.driver.model.JsonLogin;
 import com.badeeb.driveit.driver.model.JsonLogout;
@@ -32,15 +36,17 @@ import org.json.JSONObject;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     // Logging Purpose
-    public static final String TAG = MainActivity.class.getSimpleName();
+    private final String TAG = MainActivity.class.getSimpleName();
 
     // Class attributes
     private Toolbar mtoolbar;
     private FragmentManager mFragmentManager;
-    private MenuItem mlogoutItem;
+    private DrawerLayout mdrawer;
+    private ActionBarDrawerToggle mtoggle;
+    private NavigationView mnavigationView;
 
     public static User mdriver;
 
@@ -49,11 +55,44 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "onCreate - Start");
 
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_navigation);
 
         init();
 
         Log.d(TAG, "onCreate - End");
+    }
+
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+
+        Log.d(TAG, "onNavigationItemSelected - Start");
+
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+
+        if (id == R.id.nav_logout) {
+            // Handle the logout action
+            Log.d(TAG, "onNavigationItemSelected - Logout - Start");
+            goToLogin();
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+
+        Log.d(TAG, "onNavigationItemSelected - End");
+
+        return true;
     }
 
     private void init() {
@@ -63,40 +102,24 @@ public class MainActivity extends AppCompatActivity {
         mFragmentManager = getSupportFragmentManager();
 
         // Toolbar
-        this.mtoolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(this.mtoolbar);
+        mtoolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mtoolbar);
+
+
+        mdrawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mtoggle = new ActionBarDrawerToggle(
+                this, mdrawer, mtoolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+        mdrawer.setDrawerListener(mtoggle);
+        mtoggle.syncState();
+
+        mnavigationView = (NavigationView) findViewById(R.id.nav_view);
+        mnavigationView.setNavigationItemSelectedListener(this);
 
         // Load Login Fragment inside Main activity
-        // Fragment creation
+        // Load Login Fragment
         goToLogin();
 
         Log.d(TAG, "init - End");
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        Log.d(TAG, "onCreateOptionsMenu - Start");
-
-        getMenuInflater().inflate(R.menu.menu, menu);
-
-        mlogoutItem = menu.findItem(R.id.nav_logout);
-
-        mlogoutItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem menuItem) {
-                Log.d(TAG, "setupListeners - mlogoutItem_onMenuItemClick - Start");
-
-//                logout();
-                goToLogin();
-
-                Log.d(TAG, "setupListeners - mlogoutItem_onMenuItemClick - End");
-                return false;
-            }
-        });
-
-        Log.d(TAG, "onCreateOptionsMenu - End");
-        return true;
     }
 
     private void goToLogin(){
@@ -106,6 +129,15 @@ public class MainActivity extends AppCompatActivity {
         fragmentTransaction.commit();
     }
 
+    public void disbleNavigationView() {
+        mdrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+        mtoggle.setDrawerIndicatorEnabled(false);
+    }
+
+    public void enbleNavigationView() {
+        mdrawer.setDrawerLockMode(DrawerLayout.LOCK_MODE_UNLOCKED);
+        mtoggle.setDrawerIndicatorEnabled(true);
+    }
 
     private void logout() {
         Log.d(TAG, "logout - Start");
@@ -114,17 +146,13 @@ public class MainActivity extends AppCompatActivity {
 
         try {
 
-            JsonLogout request = new JsonLogout();
-
             // Create Gson object
             GsonBuilder gsonBuilder = new GsonBuilder();
             gsonBuilder.excludeFieldsWithoutExposeAnnotation();
             final Gson gson = gsonBuilder.create();
 
-            JSONObject jsonObject = new JSONObject(gson.toJson(request));
-
             // Call user login service
-            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, jsonObject,
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.POST, url, null,
 
                     new Response.Listener<JSONObject>() {
 
@@ -212,4 +240,5 @@ public class MainActivity extends AppCompatActivity {
 
         Log.d(TAG, "logout - End");
     }
+
 }

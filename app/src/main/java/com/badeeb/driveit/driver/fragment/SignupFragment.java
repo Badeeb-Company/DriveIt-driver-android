@@ -22,8 +22,8 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.badeeb.driveit.driver.MainActivity;
 import com.badeeb.driveit.driver.R;
+import com.badeeb.driveit.driver.activity.MainActivity;
 import com.badeeb.driveit.driver.model.JsonSignUp;
 import com.badeeb.driveit.driver.model.User;
 import com.badeeb.driveit.driver.network.MyVolley;
@@ -86,6 +86,9 @@ public class SignupFragment extends Fragment {
 
         // Setup listeners
         setupListeners(view);
+
+        // Refresh menu toolbar
+        ((MainActivity) getActivity()).disbleNavigationView();
 
         Log.d(TAG, "init - End");
     }
@@ -192,7 +195,7 @@ public class SignupFragment extends Fragment {
                             }
                             else {
                                 // Invalid Signup
-                                Toast.makeText(getContext(), getString(R.string.signup_error), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(getContext(), getString(R.string.signup_error), Toast.LENGTH_LONG).show();
                             }
 
                             // Disable Progress bar

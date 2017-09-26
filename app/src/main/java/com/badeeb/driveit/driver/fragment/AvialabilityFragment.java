@@ -26,8 +26,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.badeeb.driveit.driver.MainActivity;
 import com.badeeb.driveit.driver.R;
+import com.badeeb.driveit.driver.activity.MainActivity;
 import com.badeeb.driveit.driver.model.Trip;
 import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.badeeb.driveit.driver.shared.FirebaseManager;
@@ -84,18 +84,6 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         return view;
     }
 
-    @Override
-    public void onPrepareOptionsMenu(Menu menu) {
-        Log.d(TAG, "onPrepareOptionsMenu - Start");
-
-        super.onPrepareOptionsMenu(menu);
-
-        MenuItem logout = menu.findItem(R.id.nav_logout);
-        logout.setVisible(true);
-
-        Log.d(TAG, "onPrepareOptionsMenu - End");
-    }
-
     private void init(View view) {
         Log.d(TAG, "init - Start");
 
@@ -112,7 +100,7 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         }
 
         // Refresh menu toolbar
-        setHasOptionsMenu(true);
+        ((MainActivity) getActivity()).enbleNavigationView();
 
         setupListeners(view);
 
@@ -131,41 +119,65 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
     public void setupListeners(final View view) {
         Log.d(TAG, "setupListeners - Start");
 
-        TextView tvSetStatusOnline = view.findViewById(R.id.tvSetStatusOnline);
-
-        tvSetStatusOnline.setOnClickListener(new View.OnClickListener() {
+        ImageView ivOffline = view.findViewById(R.id.ivOffline);
+        ivOffline.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View bview) {
-                Log.d(TAG, "setupListeners - tvSetStatusOnline_onClick - Start");
+            public void onClick(View cview) {
+                Log.d(TAG, "setupListeners - ivOffline_onClick - Start");
 
-                setDriverOnline();
+                setDriverOnline(view);
 
-                // Change image to online
-                setDriverUIOnline(view);
-
-                AppPreferences.isOnline = true;
-
-                Log.d(TAG, "setupListeners - tvSetStatusOnline_onClick - End");
+                Log.d(TAG, "setupListeners - ivOffline_onClick - End");
             }
         });
 
-        TextView tvSetStatusOffline = view.findViewById(R.id.tvSetStatusOffline);
-
-        tvSetStatusOffline.setOnClickListener(new View.OnClickListener() {
+        ImageView ivOnline = view.findViewById(R.id.ivOnline);
+        ivOnline.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View bview) {
-                Log.d(TAG, "setupListeners - tvSetStatusOffline_onClick - Start");
+            public void onClick(View cview) {
+                Log.d(TAG, "setupListeners - ivOnline_onClick - Start");
 
-                setDriverOffline();
+                setDriverOffline(view);
 
-                // Change image to offline
-                setDriverUIOffline(view);
-
-                AppPreferences.isOnline = false;
-
-                Log.d(TAG, "setupListeners - tvSetStatusOffline_onClick - End");
+                Log.d(TAG, "setupListeners - ivOnline_onClick - End");
             }
         });
+
+//        TextView tvSetStatusOnline = view.findViewById(R.id.tvSetStatusOnline);
+//
+//        tvSetStatusOnline.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View bview) {
+//                Log.d(TAG, "setupListeners - tvSetStatusOnline_onClick - Start");
+//
+//                setDriverOnline();
+//
+//                // Change image to online
+//                setDriverUIOnline(view);
+//
+//                AppPreferences.isOnline = true;
+//
+//                Log.d(TAG, "setupListeners - tvSetStatusOnline_onClick - End");
+//            }
+//        });
+//
+//        TextView tvSetStatusOffline = view.findViewById(R.id.tvSetStatusOffline);
+//
+//        tvSetStatusOffline.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View bview) {
+//                Log.d(TAG, "setupListeners - tvSetStatusOffline_onClick - Start");
+//
+//                setDriverOffline();
+//
+//                // Change image to offline
+//                setDriverUIOffline(view);
+//
+//                AppPreferences.isOnline = false;
+//
+//                Log.d(TAG, "setupListeners - tvSetStatusOffline_onClick - End");
+//            }
+//        });
 
         // Setup listener for GPS enable or disable
         if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
@@ -188,6 +200,7 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         ImageView ivOnline = view.findViewById(R.id.ivOnline);
         ivOnline.setVisibility(View.GONE);
 
+        /*/
         // Change text
         TextView tvOfflineStatusText = view.findViewById(R.id.tvOfflineStatusText);
         tvOfflineStatusText.setVisibility(View.VISIBLE);
@@ -201,6 +214,7 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
 
         TextView tvSetStatusOnline = view.findViewById(R.id.tvSetStatusOnline);
         tvSetStatusOnline.setVisibility(View.VISIBLE);
+        */
 
         Log.d(TAG, "setDriverUIOffline - End");
     }
@@ -214,6 +228,7 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         ImageView ivOnline = view.findViewById(R.id.ivOnline);
         ivOnline.setVisibility(View.VISIBLE);
 
+        /*
         // Change text
         TextView tvOfflineStatusText = view.findViewById(R.id.tvOfflineStatusText);
         tvOfflineStatusText.setVisibility(View.GONE);
@@ -227,11 +242,12 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
 
         TextView tvSetStatusOnline = view.findViewById(R.id.tvSetStatusOnline);
         tvSetStatusOnline.setVisibility(View.GONE);
+        */
 
         Log.d(TAG, "setDriverUIOnline - End");
     }
 
-    private void setDriverOnline() {
+    private void setDriverOnline(View view) {
         Log.d(TAG, "setDriverOnline - Start");
 
         // Put Driver under firebase realtime database
@@ -243,11 +259,16 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         mtripEventListener = createValueEventListener();
         mRef.addValueEventListener(mtripEventListener);
 
+        // Change image to offline
+        setDriverUIOnline(view);
+
+        AppPreferences.isOnline = true;
+
         Log.d(TAG, "setDriverOnline - End");
     }
 
 
-    private void setDriverOffline() {
+    private void setDriverOffline(View view) {
         Log.d(TAG, "setDriverOffline - Start");
 
         // Stop listening
@@ -261,6 +282,11 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         DatabaseReference locationReference = mDatabase.createChildReference("locations", "drivers",
                 String.valueOf(MainActivity.mdriver.getId()));
         locationReference.removeValue();
+
+        // Change image to offline
+        setDriverUIOffline(view);
+
+        AppPreferences.isOnline = false;
 
         Log.d(TAG, "setDriverOffline - End");
     }
