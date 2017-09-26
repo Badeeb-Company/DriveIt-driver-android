@@ -6,6 +6,7 @@ import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -346,4 +347,13 @@ public class RequestDialogFragment extends DialogFragment {
 
         Log.d(TAG, "rejectRide - End");
     }
+
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        getDialog().getWindow().setBackgroundDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.rounded_corner_white));
+    }
+
 }

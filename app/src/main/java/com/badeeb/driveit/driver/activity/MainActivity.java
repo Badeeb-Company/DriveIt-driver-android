@@ -22,12 +22,14 @@ import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.badeeb.driveit.driver.R;
+import com.badeeb.driveit.driver.fragment.AvialabilityFragment;
 import com.badeeb.driveit.driver.fragment.LoginFragment;
 import com.badeeb.driveit.driver.model.JsonLogin;
 import com.badeeb.driveit.driver.model.JsonLogout;
 import com.badeeb.driveit.driver.model.User;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
+import com.badeeb.driveit.driver.shared.Settings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -47,6 +49,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private DrawerLayout mdrawer;
     private ActionBarDrawerToggle mtoggle;
     private NavigationView mnavigationView;
+    private Settings msettings;
 
     public static User mdriver;
 
@@ -84,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.nav_logout) {
             // Handle the logout action
             Log.d(TAG, "onNavigationItemSelected - Logout - Start");
+            msettings.clearUserInfo();
             goToLogin();
         }
 
@@ -100,6 +104,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         // Initialize Attributes
         mFragmentManager = getSupportFragmentManager();
+        msettings = Settings.getInstance();
 
         // Toolbar
         mtoolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -117,7 +122,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         // Load Login Fragment inside Main activity
         // Load Login Fragment
-        goToLogin();
+        // Load Login Fragment inside Main activity
+        // Load Login Fragment
+        if(msettings.isLoggedIn()){
+            mdriver = msettings.getUser();
+            AvialabilityFragment avialabilityFragment = new AvialabilityFragment();
+            FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
+            fragmentTransaction.add(R.id.main_frame, avialabilityFragment, avialabilityFragment.TAG);
+            fragmentTransaction.commit();
+        } else {
+            goToLogin();
+        }
 
         Log.d(TAG, "init - End");
     }

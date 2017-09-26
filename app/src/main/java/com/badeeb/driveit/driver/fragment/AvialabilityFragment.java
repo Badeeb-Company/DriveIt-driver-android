@@ -1,10 +1,12 @@
 package com.badeeb.driveit.driver.fragment;
 
 
-import android.app.AlertDialog;
+import android.Manifest;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.GpsStatus;
 import android.location.Location;
@@ -31,10 +33,14 @@ import com.badeeb.driveit.driver.activity.MainActivity;
 import com.badeeb.driveit.driver.model.Trip;
 import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.badeeb.driveit.driver.shared.FirebaseManager;
+import com.badeeb.driveit.driver.shared.OnPermissionsGrantedHandler;
+import com.badeeb.driveit.driver.shared.PermissionsChecker;
+import com.badeeb.driveit.driver.shared.UiUtils;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
+import android.support.v7.app.AlertDialog;
 
 import org.parceler.Parcels;
 
@@ -46,21 +52,27 @@ import static android.location.GpsStatus.GPS_EVENT_STOPPED;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class AvialabilityFragment extends Fragment implements LocationListener, GpsStatus.Listener {
+public class AvialabilityFragment extends Fragment {
 
     // Logging Purpose
     public static final String TAG = AvialabilityFragment.class.getSimpleName();
+    private static final int PERM_LOCATION_RQST_CODE = 100;
 
     // Class Attributes
     private final int DIALOG_RESULT = 200;
-    private final int LOCATION_PERMISSION = 100;
-    private Location mcurrentLocation;
-    private LocationManager mlocationManager;
+    private Location currentLocation;
+    private LocationManager locationManager;
     private RequestDialogFragment mrequestDialogFragment;
     private ValueEventListener mtripEventListener;
     private boolean paused;
     private boolean needsToShowDialog;
     private boolean needsToDismissDialog;
+    private OnPermissionsGrantedHandler onLocationPermissionGrantedHandler;
+    private AlertDialog locationDisabledWarningDialog;
+    private LocationChangeReceiver locationChangeReceiver;
+    private ImageView ivOffline;
+    private ImageView ivOnline;
+    private LocationListener locationListener;
 
     // Firebase database reference
     private FirebaseManager mDatabase;
@@ -89,100 +101,107 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
 
         // Initiate firebase realtime - database
         this.mDatabase = new FirebaseManager();
-
-        mlocationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+        ivOffline = view.findViewById(R.id.ivOffline);
+        ivOnline = view.findViewById(R.id.ivOnline);
+        locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
+        locationListener = createLocationListener();
 
         if (AppPreferences.isOnline) {
-            setDriverUIOnline(view);
+            setDriverUIOnline();
         }
         else {
-            setDriverUIOffline(view);
+            setDriverUIOffline();
         }
 
         // Refresh menu toolbar
         ((MainActivity) getActivity()).enbleNavigationView();
 
-        setupListeners(view);
+        setupListeners();
 
-        mcurrentLocation = getCurrentLocation();
-
-        if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            // Location permission granted
-            Log.d(TAG, "init - Request Location updates");
-            mlocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, AppPreferences.UPDATE_TIME, AppPreferences.UPDATE_DISTANCE, this);
-
-        }
+        onLocationPermissionGrantedHandler = createOnLocationPermissionGrantedHandler();
+        locationChangeReceiver = new LocationChangeReceiver();
 
         Log.d(TAG, "init - End");
     }
 
-    public void setupListeners(final View view) {
+    @SuppressWarnings({"MissingPermission"})
+    private OnPermissionsGrantedHandler createOnLocationPermissionGrantedHandler() {
+        return new OnPermissionsGrantedHandler() {
+            @Override
+            public void onPermissionsGranted() {
+                Log.d(TAG, "Location - onPermissionsGranted - Start");
+                if(checkLocationService()) {
+                    Log.d(TAG, "Location - onPermissionsGranted - Set Driver Online");
+                    setDriverOnline();
+                    // Get current location
+                    currentLocation = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+
+                }
+                Log.d(TAG, "Location - onPermissionsGranted - End");
+            }
+        };
+    }
+
+    private boolean checkLocationService() {
+        boolean gpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        if (!gpsEnabled) {
+            if (locationDisabledWarningDialog == null || !locationDisabledWarningDialog.isShowing()) {
+                showGPSDisabledWarningDialog();
+                getActivity().registerReceiver(locationChangeReceiver, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
+            }
+        }
+        else {
+            if (locationDisabledWarningDialog != null && locationDisabledWarningDialog.isShowing()) {
+                locationDisabledWarningDialog.dismiss();
+            }
+        }
+        return gpsEnabled;
+    }
+
+    private void showGPSDisabledWarningDialog() {
+
+        DialogInterface.OnClickListener positiveListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
+            }
+        };
+
+        locationDisabledWarningDialog = UiUtils.showDialog(getContext(), R.style.DialogTheme,
+                R.string.GPS_disabled_warning_title, R.string.GPS_disabled_warning_msg,
+                R.string.ok_btn_dialog, positiveListener);
+
+    }
+
+
+    public void setupListeners() {
         Log.d(TAG, "setupListeners - Start");
 
-        ImageView ivOffline = view.findViewById(R.id.ivOffline);
         ivOffline.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View cview) {
                 Log.d(TAG, "setupListeners - ivOffline_onClick - Start");
 
-                setDriverOnline(view);
+                // Check if location permission is granted or not
+                PermissionsChecker.checkPermissions(AvialabilityFragment.this, onLocationPermissionGrantedHandler,
+                        PERM_LOCATION_RQST_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
+
 
                 Log.d(TAG, "setupListeners - ivOffline_onClick - End");
             }
         });
 
-        ImageView ivOnline = view.findViewById(R.id.ivOnline);
         ivOnline.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View cview) {
                 Log.d(TAG, "setupListeners - ivOnline_onClick - Start");
 
-                setDriverOffline(view);
+                setDriverOffline();
 
                 Log.d(TAG, "setupListeners - ivOnline_onClick - End");
             }
         });
-
-//        TextView tvSetStatusOnline = view.findViewById(R.id.tvSetStatusOnline);
-//
-//        tvSetStatusOnline.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View bview) {
-//                Log.d(TAG, "setupListeners - tvSetStatusOnline_onClick - Start");
-//
-//                setDriverOnline();
-//
-//                // Change image to online
-//                setDriverUIOnline(view);
-//
-//                AppPreferences.isOnline = true;
-//
-//                Log.d(TAG, "setupListeners - tvSetStatusOnline_onClick - End");
-//            }
-//        });
-//
-//        TextView tvSetStatusOffline = view.findViewById(R.id.tvSetStatusOffline);
-//
-//        tvSetStatusOffline.setOnClickListener(new View.OnClickListener() {
-//            @Override
-//            public void onClick(View bview) {
-//                Log.d(TAG, "setupListeners - tvSetStatusOffline_onClick - Start");
-//
-//                setDriverOffline();
-//
-//                // Change image to offline
-//                setDriverUIOffline(view);
-//
-//                AppPreferences.isOnline = false;
-//
-//                Log.d(TAG, "setupListeners - tvSetStatusOffline_onClick - End");
-//            }
-//        });
-
-        // Setup listener for GPS enable or disable
-        if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-            mlocationManager.addGpsStatusListener(this);
-        }
 
         // Set Firebase database Listener for trip
         // Create listener on firebase realtime -
@@ -191,102 +210,106 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         Log.d(TAG, "setupListeners - End");
     }
 
-    private void setDriverUIOffline(View view) {
+    private void setDriverUIOffline() {
         Log.d(TAG, "setDriverUIOffline - Start");
 
-        ImageView ivOffline = view.findViewById(R.id.ivOffline);
         ivOffline.setVisibility(View.VISIBLE);
 
-        ImageView ivOnline = view.findViewById(R.id.ivOnline);
         ivOnline.setVisibility(View.GONE);
-
-        /*/
-        // Change text
-        TextView tvOfflineStatusText = view.findViewById(R.id.tvOfflineStatusText);
-        tvOfflineStatusText.setVisibility(View.VISIBLE);
-
-        TextView tvOnlineStatusText = view.findViewById(R.id.tvOnlineStatusText);
-        tvOnlineStatusText.setVisibility(View.GONE);
-
-        // Change Button text
-        TextView tvSetStatusOffline = view.findViewById(R.id.tvSetStatusOffline);
-        tvSetStatusOffline.setVisibility(View.GONE);
-
-        TextView tvSetStatusOnline = view.findViewById(R.id.tvSetStatusOnline);
-        tvSetStatusOnline.setVisibility(View.VISIBLE);
-        */
 
         Log.d(TAG, "setDriverUIOffline - End");
     }
 
-    private void setDriverUIOnline(View view) {
+    private void setDriverUIOnline() {
         Log.d(TAG, "setDriverUIOnline - Start");
 
-        ImageView ivOffline = view.findViewById(R.id.ivOffline);
         ivOffline.setVisibility(View.GONE);
 
-        ImageView ivOnline = view.findViewById(R.id.ivOnline);
         ivOnline.setVisibility(View.VISIBLE);
-
-        /*
-        // Change text
-        TextView tvOfflineStatusText = view.findViewById(R.id.tvOfflineStatusText);
-        tvOfflineStatusText.setVisibility(View.GONE);
-
-        TextView tvOnlineStatusText = view.findViewById(R.id.tvOnlineStatusText);
-        tvOnlineStatusText.setVisibility(View.VISIBLE);
-
-        // Change Button text
-        TextView tvSetStatusOffline = view.findViewById(R.id.tvSetStatusOffline);
-        tvSetStatusOffline.setVisibility(View.VISIBLE);
-
-        TextView tvSetStatusOnline = view.findViewById(R.id.tvSetStatusOnline);
-        tvSetStatusOnline.setVisibility(View.GONE);
-        */
 
         Log.d(TAG, "setDriverUIOnline - End");
     }
 
-    private void setDriverOnline(View view) {
+    @SuppressWarnings({"MissingPermission"})
+    private void setDriverOnline() {
         Log.d(TAG, "setDriverOnline - Start");
 
-        // Put Driver under firebase realtime database
-        mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "state").setValue("available");
+        DialogInterface.OnClickListener positiveListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
 
-        DatabaseReference mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
+                // Put Driver under firebase realtime database
+                mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "state").setValue("available");
 
-        // Start Listening for Firebase
-        mtripEventListener = createValueEventListener();
-        mRef.addValueEventListener(mtripEventListener);
+                DatabaseReference mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
 
-        // Change image to offline
-        setDriverUIOnline(view);
+                // Start Listening for Firebase
+                mtripEventListener = createValueEventListener();
+                mRef.addValueEventListener(mtripEventListener);
 
-        AppPreferences.isOnline = true;
+                // Change image to offline
+                setDriverUIOnline();
+
+                AppPreferences.isOnline = true;
+
+                if (currentLocation != null) {
+                    setFirebaseDriverLocation();
+                }
+                locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, AppPreferences.UPDATE_TIME, AppPreferences.UPDATE_DISTANCE, locationListener);
+            }
+        };
+
+        DialogInterface.OnClickListener negativeListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        };
+
+        UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.online_msg, R.string.online_des_msg,
+                R.string.yes_msg, positiveListener, R.string.no_msg, negativeListener);
+
 
         Log.d(TAG, "setDriverOnline - End");
     }
 
 
-    private void setDriverOffline(View view) {
+    private void setDriverOffline() {
         Log.d(TAG, "setDriverOffline - Start");
 
-        // Stop listening
-        DatabaseReference mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
-        mRef.removeEventListener(mtripEventListener);
+        DialogInterface.OnClickListener positiveListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
 
-        // Remove Driver from firebase realtime database
-        mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"");
-        mRef.removeValue();
+                // Stop listening
+                DatabaseReference mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
+                mRef.removeEventListener(mtripEventListener);
 
-        DatabaseReference locationReference = mDatabase.createChildReference("locations", "drivers",
-                String.valueOf(MainActivity.mdriver.getId()));
-        locationReference.removeValue();
+                // Remove Driver from firebase realtime database
+                mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"");
+                mRef.removeValue();
 
-        // Change image to offline
-        setDriverUIOffline(view);
+                DatabaseReference locationReference = mDatabase.createChildReference("locations", "drivers",
+                        String.valueOf(MainActivity.mdriver.getId()));
+                locationReference.removeValue();
 
-        AppPreferences.isOnline = false;
+                // Change image to offline
+                setDriverUIOffline();
+
+                AppPreferences.isOnline = false;
+            }
+        };
+
+        DialogInterface.OnClickListener negativeListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+
+            }
+        };
+
+        UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.offline_msg, R.string.offline_des_msg,
+                R.string.yes_msg, positiveListener, R.string.no_msg, negativeListener);
+
 
         Log.d(TAG, "setDriverOffline - End");
     }
@@ -325,146 +348,48 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         Log.d(TAG, "displayMessage - End");
     }
 
-    // Current Location Inquiry
-    private Location getCurrentLocation() {
-        Log.d(TAG, "getCurrentLocation - Start");
+    private void setFirebaseDriverLocation() {
+        Log.d(TAG, "setFirebaseDriverLocation - Start");
 
-        Location currentLocation = null;
-        // Check if GPS is granted or not
-        if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            // Location permission is required
-            Log.d(TAG, "getCurrentLocation - Permission is not granted");
-            // Show Alert to enable location service
-            Toast.makeText(getContext(), "Grant location permission to APP", Toast.LENGTH_SHORT).show();
-            // TODO: Show dialog to grant permissions and reload data after that
-            requestPermissions(new String[]{android.Manifest.permission.ACCESS_FINE_LOCATION}, LOCATION_PERMISSION);
-        } else {
-            // Permission is granted now
-            Log.d(TAG, "getCurrentLocation - Permission is granted");
-            boolean isGPSEnabled = mlocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-            if (isGPSEnabled) {
-                List<String> providers = mlocationManager.getProviders(true);
-                for (String provider : providers) {
-                    mlocationManager.requestLocationUpdates(provider, 0, 0, this);
-                    Location l = mlocationManager.getLastKnownLocation(provider);
-                    if (l == null) {
-                        continue;
-                    }
-                    if (currentLocation == null || l.getAccuracy() < currentLocation.getAccuracy()) {
-                        // Found best last known location: %s", l);
-                        currentLocation = l;
-                    }
-                }
-                if (currentLocation == null) {
-                    Log.d(TAG, "getCurrentLocation - CurrentLocation is null");
-                    Toast.makeText(getContext(), getResources().getText(R.string.enable_gps), Toast.LENGTH_SHORT).show();
-                }
+        DatabaseReference mRef = mDatabase.createChildReference("locations");
+        mRef.child("drivers").child(MainActivity.mdriver.getId()+"").child("lat").setValue(currentLocation.getLatitude());
+        mRef.child("drivers").child(MainActivity.mdriver.getId()+"").child("long").setValue(currentLocation.getLongitude());
 
-                Log.d(TAG, "getCurrentLocation - Request Location updates");
-                mlocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, AppPreferences.UPDATE_TIME, AppPreferences.UPDATE_DISTANCE, this);
-
-            } else {
-                showSettingsDialog();
-
-                return null;
-            }
-
-        }
-
-        Log.d(TAG, "getCurrentLocation - End");
-
-        return currentLocation;
+        Log.d(TAG, "setFirebaseDriverLocation - End");
     }
-
-    private void showSettingsDialog() {
-        AlertDialog.Builder alertDialog = new AlertDialog.Builder(getActivity());
-
-        alertDialog.setTitle("GPS Disabled");
-        alertDialog.setMessage("Please enable GPS to continue");
-
-        alertDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
-                startActivity(intent);
-            }
-        });
-
-        alertDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                Toast.makeText(getActivity(), "You need to enable GPS first", Toast.LENGTH_LONG).show();
-                showSettingsDialog();
-            }
-        });
-
-        alertDialog.show();
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        Log.d(TAG, "onRequestPermissionsResult - Start");
-
-        if (requestCode == LOCATION_PERMISSION) {
-            Log.d(TAG, "onRequestPermissionsResult - LOCATION_PERMISSION - Start");
-
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                Log.d(TAG, "onRequestPermissionsResult - LOCATION_PERMISSION - Permission Granted");
-                getCurrentLocation();
-            }
-
-            Log.d(TAG, "onRequestPermissionsResult - LOCATION_PERMISSION - End");
-        }
-
-        Log.d(TAG, "onRequestPermissionsResult - End");
-    }
-
-
 
     // ---------------------------------------------------------------
     // Location interface methods
-    @Override
-    public void onLocationChanged(Location location) {
-        Log.d(TAG, "onLocationChanged - Start");
+    private LocationListener createLocationListener() {
+        return new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                Log.d(TAG, "onLocationChanged - Start");
 
-        mcurrentLocation = location;
+                currentLocation = location;
 
-        // Put firebase realtime database with current location
-        DatabaseReference mRef = mDatabase.createChildReference("locations");
-        mRef.child("drivers").child(MainActivity.mdriver.getId()+"").child("lat").setValue(mcurrentLocation.getLatitude());
-        mRef.child("drivers").child(MainActivity.mdriver.getId()+"").child("long").setValue(mcurrentLocation.getLongitude());
+                // Put firebase realtime database with current location
+                setFirebaseDriverLocation();
 
-        Log.d(TAG, "onLocationChanged - End");
+                Log.d(TAG, "onLocationChanged - End");
+            }
+
+            @Override
+            public void onStatusChanged(String s, int i, Bundle bundle) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String s) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String s) {
+
+            }
+        };
     }
-
-    @Override
-    public void onStatusChanged(String s, int i, Bundle bundle) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String s) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String s) {
-
-    }
-
-    @Override
-    public void onGpsStatusChanged(int event) {
-        Log.d(TAG, "onGpsStatusChanged - Start");
-
-        if (event == GPS_EVENT_STARTED) {
-            Log.d(TAG, "onGpsStatusChanged - GPS Started");
-            getCurrentLocation();
-        } else if (event == GPS_EVENT_STOPPED) {
-            showSettingsDialog();
-        }
-
-        Log.d(TAG, "onGpsStatusChanged - End");
-    }
-
 
     private ValueEventListener createValueEventListener() {
         return new ValueEventListener() {
@@ -543,4 +468,15 @@ public class AvialabilityFragment extends Fragment implements LocationListener, 
         }
     }
 
+    private final class LocationChangeReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "LocationChangeReceiver - onReceive - Start");
+            if (intent.getAction().equals(LocationManager.PROVIDERS_CHANGED_ACTION)){
+                checkLocationService();
+                getActivity().unregisterReceiver(this);
+            }
+            Log.d(TAG, "LocationChangeReceiver - onReceive - End");
+        }
+    }
 }

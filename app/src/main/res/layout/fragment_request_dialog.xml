@@ -1,117 +1,129 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:minHeight="200dp"
-    android:minWidth="300dp"
+    android:layout_height="match_parent"
+    android:minWidth="340dp"
+    android:minHeight="340dp"
+    android:background="@drawable/rounded_corner_white"
     android:orientation="vertical"
-    android:layout_margin="8dp"
-    android:background="@color/white"
+    android:gravity="center"
     >
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/new_request_msg"
-        android:layout_gravity="center"
-        android:textColor="#0000FF"
-        android:textSize="18sp"
-        android:layout_marginBottom="20dp"/>
-
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp">
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:background="@color/white"
+        >
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginRight="10dp"
-            android:text="Name:"
-            android:textColor="#000"
-            android:textSize="18sp" />
+            android:text="@string/new_request_msg"
+            android:layout_gravity="center"
+            android:textColor="@color/red"
+            android:textSize="18sp"
+            android:layout_marginBottom="20dp"/>
 
-        <TextView
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:id="@+id/tvName"
-            android:textSize="14sp" />
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:text="Name:"
+                android:textColor="@color/jumbo"
+                android:textSize="18sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/light_black"
+                android:id="@+id/tvName"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:text="Location:"
+                android:textColor="@color/jumbo"
+                android:textSize="18sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/light_black"
+                android:id="@+id/tvLocation"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:text="Time to arrive:"
+                android:textColor="@color/jumbo"
+                android:textSize="18sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/light_black"
+                android:id="@+id/tvTimeToArrive"
+                android:textSize="14sp" />
+
+        </LinearLayout>
+
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginRight="10dp"
+                android:text="Distance to arrive:"
+                android:textColor="@color/jumbo"
+                android:textSize="18sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/light_black"
+                android:id="@+id/tvDistanceToArrive"
+                android:textSize="14sp" />
+
+        </LinearLayout>
 
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="10dp"
-            android:text="Location:"
-            android:textColor="#000"
-            android:textSize="18sp" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/tvLocation"
-            android:textSize="14sp" />
-
-    </LinearLayout>
-
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="10dp"
-            android:text="Time to arrive:"
-            android:textColor="#000"
-            android:textSize="18sp" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:id="@+id/tvTimeToArrive"
-            android:textSize="14sp" />
-
-    </LinearLayout>
-
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="20dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginRight="10dp"
-            android:text="Distance to arrive:"
-            android:textColor="#000"
-            android:textSize="18sp" />
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:id="@+id/tvDistanceToArrive"
-            android:textSize="14sp" />
-
-    </LinearLayout>
-
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/light_gray">
+        android:background="@color/light_gray"
+        android:padding="8dp">
 
         <Button
             android:id="@+id/bReject"
@@ -120,9 +132,10 @@
             android:layout_gravity="center"
             android:layout_weight="1"
             android:text="@string/reject"
-            android:background="@drawable/btn_white_rounded_corner"
+            android:background="@drawable/rounded_corner_white"
             android:textColor="@color/red"
             android:layout_margin="4dp"
+            android:padding="8dp"
             />
 
         <Button
@@ -135,5 +148,6 @@
             android:text="@string/accept" />
 
     </LinearLayout>
+
 
 </LinearLayout>

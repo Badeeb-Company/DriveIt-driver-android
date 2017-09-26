@@ -25,9 +25,7 @@ public class AppPreferences {
 
     // Trip constants
     public static boolean isOnline = false;
-    public static final String TRIP_ACCEPTED = "accepted";
-    public static final String TRIP_REJECTED = "notServed";
-    public static final String TRIP_PENDING = "pending";
+    public static final String TRIP_PENDING = "PENDING";
 
     // Location updates constants
     public static final int UPDATE_TIME = 3000;    // Millisecoonds

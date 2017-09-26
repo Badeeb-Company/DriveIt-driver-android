@@ -34,6 +34,7 @@ import com.badeeb.driveit.driver.model.JsonLogin;
 import com.badeeb.driveit.driver.model.User;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
+import com.badeeb.driveit.driver.shared.Settings;
 import com.badeeb.driveit.driver.shared.UiUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -201,6 +202,8 @@ public class LoginFragment extends Fragment {
                                 MainActivity.mdriver = jsonResponse.getUser();
 
                                 AppPreferences.setToken(getActivity(), MainActivity.mdriver.getToken());
+                                Settings settings = Settings.getInstance();
+                                settings.saveUser(MainActivity.mdriver);
 
                                 // Move to avialability fragment
                                 AvialabilityFragment avialabilityFragment = new AvialabilityFragment();

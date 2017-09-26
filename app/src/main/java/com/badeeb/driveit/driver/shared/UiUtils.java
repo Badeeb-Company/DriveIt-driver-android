@@ -2,6 +2,10 @@ package com.badeeb.driveit.driver.shared;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.provider.*;
+import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
@@ -48,4 +52,32 @@ public class UiUtils {
         return progressDialog;
     }
 
+    public static AlertDialog showDialog(Context context, int style, int title, int message,
+                                  int positiveMessage, DialogInterface.OnClickListener positiveListener,
+                                  int negativeMessage, DialogInterface.OnClickListener negativeListener) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context, style);
+        builder.setTitle(title);
+        builder.setMessage(message);
+        builder.setPositiveButton(positiveMessage, positiveListener);
+        builder.setNegativeButton(negativeMessage, negativeListener);
+        builder.setCancelable(false);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        return dialog;
+    }
+
+    public static AlertDialog showDialog(Context context, int style, int title, int message,
+                                         int positiveMessage, DialogInterface.OnClickListener positiveListener
+                                         ) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context, style);
+        builder.setTitle(title);
+        builder.setMessage(message);
+        builder.setPositiveButton(positiveMessage, positiveListener);
+        builder.setCancelable(false);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        return dialog;
+    }
 }
