@@ -24,12 +24,11 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.badeeb.driveit.driver.R;
 import com.badeeb.driveit.driver.fragment.AvialabilityFragment;
 import com.badeeb.driveit.driver.fragment.LoginFragment;
-import com.badeeb.driveit.driver.model.JsonLogin;
 import com.badeeb.driveit.driver.model.JsonLogout;
 import com.badeeb.driveit.driver.model.User;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
-import com.badeeb.driveit.driver.shared.Settings;
+import com.badeeb.driveit.driver.shared.AppSettings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -49,7 +48,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private DrawerLayout mdrawer;
     private ActionBarDrawerToggle mtoggle;
     private NavigationView mnavigationView;
-    private Settings msettings;
+    private AppSettings msettings;
 
     public static User mdriver;
 
@@ -88,6 +87,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             // Handle the logout action
             Log.d(TAG, "onNavigationItemSelected - Logout - Start");
             msettings.clearUserInfo();
+            logout();
             goToLogin();
         }
 
@@ -104,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
         // Initialize Attributes
         mFragmentManager = getSupportFragmentManager();
-        msettings = Settings.getInstance();
+        msettings = AppSettings.getInstance();
 
         // Toolbar
         mtoolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -121,20 +121,33 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mnavigationView.setNavigationItemSelectedListener(this);
 
         // Load Login Fragment inside Main activity
-        // Load Login Fragment
-        // Load Login Fragment inside Main activity
-        // Load Login Fragment
         if(msettings.isLoggedIn()){
             mdriver = msettings.getUser();
-            AvialabilityFragment avialabilityFragment = new AvialabilityFragment();
-            FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
-            fragmentTransaction.add(R.id.main_frame, avialabilityFragment, avialabilityFragment.TAG);
-            fragmentTransaction.commit();
+
+            if (mdriver.getState().equals(AppPreferences.IN_TRIP)) {
+                // Go to trip details fragment
+            }
+            else if (mdriver.getState().equals(AppPreferences.ONLINE)) {
+                // Go to Availability fragment
+                goToAvialabilityFragment();
+            }
+            else {
+                // Go to Availability fragment
+                goToAvialabilityFragment();
+            }
+
         } else {
             goToLogin();
         }
 
         Log.d(TAG, "init - End");
+    }
+
+    private void goToAvialabilityFragment() {
+        AvialabilityFragment avialabilityFragment = new AvialabilityFragment();
+        FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.main_frame, avialabilityFragment, avialabilityFragment.TAG);
+        fragmentTransaction.commit();
     }
 
     private void goToLogin(){
@@ -188,16 +201,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                             // check status  code of response
                             // Success login
                             // Clear callback stack
-                            mFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+//                            mFragmentManager.popBackStack(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
 
                             // Move to next screen --> Login fragment
-                            LoginFragment loginFragment = new LoginFragment();
-
-                            FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
-
-                            fragmentTransaction.add(R.id.main_frame, loginFragment, loginFragment.TAG);
-
-                            fragmentTransaction.commit();
+//                            goToLogin();
 
 
 

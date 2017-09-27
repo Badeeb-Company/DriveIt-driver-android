@@ -10,7 +10,6 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputMethodManager;
@@ -34,7 +33,7 @@ import com.badeeb.driveit.driver.model.JsonLogin;
 import com.badeeb.driveit.driver.model.User;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
-import com.badeeb.driveit.driver.shared.Settings;
+import com.badeeb.driveit.driver.shared.AppSettings;
 import com.badeeb.driveit.driver.shared.UiUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -161,6 +160,13 @@ public class LoginFragment extends Fragment {
     // Network calls
     private void login() {
 
+        // Validate input fields
+        if (! validateInput()) {
+            // Disable progress bar
+            progressDialog.dismiss();
+            return;
+        }
+
         Log.d(TAG, "login - Start");
 
         try {
@@ -201,18 +207,13 @@ public class LoginFragment extends Fragment {
                                 // Move to next screen --> Main Activity
                                 MainActivity.mdriver = jsonResponse.getUser();
 
-                                AppPreferences.setToken(getActivity(), MainActivity.mdriver.getToken());
-                                Settings settings = Settings.getInstance();
+                                MainActivity.mdriver.setState(AppPreferences.LOGGED_IN);
+
+                                AppSettings settings = AppSettings.getInstance();
                                 settings.saveUser(MainActivity.mdriver);
 
                                 // Move to avialability fragment
-                                AvialabilityFragment avialabilityFragment = new AvialabilityFragment();
-                                FragmentManager fragmentManager = getFragmentManager();
-                                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-                                fragmentTransaction.add(R.id.main_frame, avialabilityFragment, avialabilityFragment.TAG);
-
-                                fragmentTransaction.commit();
+                                goToAvialabilityFragment();
 
                                 View view = getActivity().getCurrentFocus();
                                 if (view != null) {
@@ -239,7 +240,12 @@ public class LoginFragment extends Fragment {
                             // Network Error Handling
                             Log.d(TAG, "login - onErrorResponse: " + error.toString());
 
-                            if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
+                            if (error instanceof AuthFailureError && error.networkResponse.statusCode == 401) {
+                                // Authorization issue
+                                UiUtils.showDialog(getContext(), R.style.DialogTheme,
+                                        R.string.login_error, R.string.ok_btn_dialog, null);
+                            }
+                            else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
 
@@ -282,4 +288,43 @@ public class LoginFragment extends Fragment {
         Log.d(TAG, "login - End");
     }
 
+    private void goToAvialabilityFragment() {
+        Log.d(TAG, "goToAvialabilityFragment - Start");
+
+        AvialabilityFragment avialabilityFragment = new AvialabilityFragment();
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.main_frame, avialabilityFragment, avialabilityFragment.TAG);
+        fragmentTransaction.commit();
+
+        Log.d(TAG, "goToAvialabilityFragment - End");
+    }
+
+    private boolean validateInput() {
+
+        boolean valid = true;
+
+        if (mEmailView.getText().toString().isEmpty()) {
+            // Empty Email
+            mEmailView.setError(getString(R.string.error_field_required));
+            valid = false;
+        }
+        else if (! AppPreferences.isEmailValid(mEmailView.getText().toString())) {
+            // Email is wrong
+            mEmailView.setError(getString(R.string.error_invalid_email));
+            valid = false;
+        }
+
+        if (mPasswordView.getText().toString().isEmpty()) {
+            // Empty Password
+            mPasswordView.setError(getString(R.string.error_field_required));
+            valid = false;
+        }
+        else if (! AppPreferences.isPasswordValid(mPasswordView.getText().toString())) {
+            mPasswordView.setError(getString(R.string.error_invalid_password));
+            valid = false;
+        }
+
+        return valid;
+    }
 }

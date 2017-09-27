@@ -48,6 +48,11 @@ public class SignupFragment extends Fragment {
     public static final String TAG = SignupFragment.class.getSimpleName();
 
     // Class Attributes
+    private EditText name;
+    private EditText email;
+    private EditText password;
+    private EditText phone;
+    private RoundedImageView profileImage;
 
     private ProgressDialog progressDialog;
     // attributes that will be used for JSON calls
@@ -84,6 +89,12 @@ public class SignupFragment extends Fragment {
 
 		progressDialog = UiUtils.createProgressDialog(getActivity(), R.style.DialogTheme);
 
+        name = (EditText) view.findViewById(R.id.name);
+        email = (EditText) view.findViewById(R.id.email);
+        password = (EditText) view.findViewById(R.id.password);
+        phone = (EditText) view.findViewById(R.id.phone);
+        profileImage = (RoundedImageView) view.findViewById(R.id.profile_image);
+
         // Setup listeners
         setupListeners(view);
 
@@ -106,12 +117,6 @@ public class SignupFragment extends Fragment {
 
                 // Enable Progress bar
                 progressDialog.show();
-
-                EditText name = (EditText) view.findViewById(R.id.name);
-                EditText email = (EditText) view.findViewById(R.id.email);
-                EditText password = (EditText) view.findViewById(R.id.password);
-                EditText phone = (EditText) view.findViewById(R.id.phone);
-                RoundedImageView profileImage = (RoundedImageView) view.findViewById(R.id.profile_image);
 
                 MainActivity.mdriver.setName(name.getText().toString());
                 MainActivity.mdriver.setEmail(email.getText().toString());
@@ -145,6 +150,12 @@ public class SignupFragment extends Fragment {
 
     private void signup() {
         Log.d(TAG, "signup - Start");
+
+        if (! validateInput()) {
+            // Disable Progress bar
+            progressDialog.dismiss();
+            return;
+        }
 
         try {
 
@@ -183,15 +194,8 @@ public class SignupFragment extends Fragment {
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success login
                                 // Move to next screen --> Main Activity
-                                LoginFragment loginFragment = new LoginFragment();
-                                FragmentManager fragmentManager = getFragmentManager();
-                                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-
-                                fragmentTransaction.add(R.id.main_frame, loginFragment, loginFragment.TAG);
-
-                                fragmentTransaction.addToBackStack(TAG);
-
-                                fragmentTransaction.commit();
+                                UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.success_sign_up, R.string.ok_btn_dialog, null);
+                                goToLogin();
                             }
                             else {
                                 // Invalid Signup
@@ -256,53 +260,60 @@ public class SignupFragment extends Fragment {
         Log.d(TAG, "signup - End");
     }
 
-//    private void askForReadStoragePermission() {
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//            if (ContextCompat.checkSelfPermission(getContext(), Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-//
-//
-//                if (ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),
-//                        Manifest.permission.READ_EXTERNAL_STORAGE)) {
-//                    requestPermissions(
-//                            new String[]
-//                                    {Manifest.permission.READ_EXTERNAL_STORAGE}
-//                            , PERMISSION_READ_STORAGE);
-//                } else {
-//
-//
-//                    /** MY_PERMISSIONS_REQUEST_READ_EXTERNAL_STORAGE is an app-defined int constant. The callback method gets the result of the request. **/
-//                    ActivityCompat.requestPermissions(getActivity(),
-//                            new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-//                            PERMISSION_READ_STORAGE);
-//                }
-//            } else {
-//                /** Already has permission */
-//
-//                openSelectPictureScreen();
-//            }
-//        } else {
-//            /** No run time permission needed, version < M*/
-//            openSelectPictureScreen();
-//        }
-//    }
-//
-//    private void openSelectPictureScreen() {
-//        Intent intent = new Intent();
-//        intent.setType("image/*");
-//        intent.setAction(Intent.ACTION_GET_CONTENT);
-//        startActivityForResult(Intent.createChooser(intent, "Select Picture"), IMAGE_GALLERY_REQUEST);
-//    }
-//
-//    @Override
-//    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-//        if (data != null && data.getData() != null && resultCode == RESULT_OK) {
-//
-//            Uri uri = data.getData();
-//            RoundedImageView profileImage = (RoundedImageView) findViewById(R.id.profile_image);
-//            profileImage.setImageURI(uri);
-//
-//            Log.d(TAG, "Image URI: "+uri);
-//        }
-//        super.onActivityResult(requestCode, resultCode, data);
-//    }
+    private void goToLogin() {
+        LoginFragment loginFragment = new LoginFragment();
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        fragmentTransaction.add(R.id.main_frame, loginFragment, loginFragment.TAG);
+
+        fragmentTransaction.addToBackStack(TAG);
+
+        fragmentTransaction.commit();
+    }
+
+    private boolean validateInput() {
+
+        boolean valid = true;
+
+        if (email.getText().toString().isEmpty()) {
+            // Empty Email
+            email.setError(getString(R.string.error_field_required));
+            valid = false;
+        }
+        else if (! AppPreferences.isEmailValid(email.getText().toString())) {
+            // Email is wrong
+            email.setError(getString(R.string.error_invalid_email));
+            valid = false;
+        }
+
+        if (password.getText().toString().isEmpty()) {
+            // Empty Password
+            password.setError(getString(R.string.error_field_required));
+            valid = false;
+        }
+        else if (! AppPreferences.isPasswordValid(password.getText().toString())) {
+            password.setError(getString(R.string.error_invalid_password));
+            valid = false;
+        }
+
+        if (name.getText().toString().isEmpty()) {
+            // Empty name
+            name.setError(getString(R.string.error_field_required));
+            valid = false;
+        }
+
+        if (phone.getText().toString().isEmpty()) {
+            // Empty Phone
+            phone.setError(getString(R.string.error_field_required));
+            valid = false;
+        }
+        else if (! AppPreferences.isPhoneNumberValid(phone.getText().toString())) {
+            phone.setError(getString(R.string.error_invalid_phone_number));
+            valid = false;
+        }
+
+        return valid;
+    }
+
 }

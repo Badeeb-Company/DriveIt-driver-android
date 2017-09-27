@@ -2,7 +2,7 @@ package com.badeeb.driveit.driver.controllers;
 
 import android.app.Application;
 
-import com.badeeb.driveit.driver.shared.Settings;
+import com.badeeb.driveit.driver.shared.AppSettings;
 
 
 /**
@@ -26,7 +26,7 @@ public class DriveItApplication extends Application {
     }
 
     public static boolean isLoggedIn() {
-        return Settings.getInstance().isLoggedIn();
+        return AppSettings.getInstance().isLoggedIn();
     }
 
 }

@@ -52,6 +52,18 @@ public class UiUtils {
         return progressDialog;
     }
 
+    /**
+     * Dialog with both positive and negative listeners
+     * @param context
+     * @param style
+     * @param title
+     * @param message
+     * @param positiveMessage
+     * @param positiveListener
+     * @param negativeMessage
+     * @param negativeListener
+     * @return
+     */
     public static AlertDialog showDialog(Context context, int style, int title, int message,
                                   int positiveMessage, DialogInterface.OnClickListener positiveListener,
                                   int negativeMessage, DialogInterface.OnClickListener negativeListener) {
@@ -67,6 +79,16 @@ public class UiUtils {
         return dialog;
     }
 
+    /**
+     * Dialog with on positive listener
+     * @param context
+     * @param style
+     * @param title
+     * @param message
+     * @param positiveMessage
+     * @param positiveListener
+     * @return
+     */
     public static AlertDialog showDialog(Context context, int style, int title, int message,
                                          int positiveMessage, DialogInterface.OnClickListener positiveListener
                                          ) {
@@ -80,4 +102,28 @@ public class UiUtils {
 
         return dialog;
     }
+
+    /**
+     * Dialog with on positive listener title only
+     * @param context
+     * @param style
+     * @param title
+     * @param message
+     * @param positiveMessage
+     * @param positiveListener
+     * @return
+     */
+    public static AlertDialog showDialog(Context context, int style, int title,
+                                         int positiveMessage, DialogInterface.OnClickListener positiveListener
+    ) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(context, style);
+        builder.setTitle(title);
+        builder.setPositiveButton(positiveMessage, positiveListener);
+        builder.setCancelable(false);
+        AlertDialog dialog = builder.create();
+        dialog.show();
+
+        return dialog;
+    }
+
 }

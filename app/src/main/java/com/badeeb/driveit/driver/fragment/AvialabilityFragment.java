@@ -7,31 +7,35 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.PackageManager;
-import android.location.GpsStatus;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
-import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
-import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.DefaultRetryPolicy;
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.ServerError;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.badeeb.driveit.driver.R;
 import com.badeeb.driveit.driver.activity.MainActivity;
 import com.badeeb.driveit.driver.model.Trip;
+import com.badeeb.driveit.driver.model.JsonDriverStatus;
+import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
+import com.badeeb.driveit.driver.shared.AppSettings;
 import com.badeeb.driveit.driver.shared.FirebaseManager;
 import com.badeeb.driveit.driver.shared.OnPermissionsGrantedHandler;
 import com.badeeb.driveit.driver.shared.PermissionsChecker;
@@ -40,14 +44,17 @@ import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.ValueEventListener;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import android.support.v7.app.AlertDialog;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.parceler.Parcels;
 
-import java.util.List;
-
-import static android.location.GpsStatus.GPS_EVENT_STARTED;
-import static android.location.GpsStatus.GPS_EVENT_STOPPED;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -56,10 +63,14 @@ public class AvialabilityFragment extends Fragment {
 
     // Logging Purpose
     public static final String TAG = AvialabilityFragment.class.getSimpleName();
-    private static final int PERM_LOCATION_RQST_CODE = 100;
 
-    // Class Attributes
+    // Constants
     private final int DIALOG_RESULT = 200;
+    private final int PERM_LOCATION_RQST_CODE = 100;
+    private final String ONLINE = "ONLINE";
+    private final String OFFLINE = "OFFLINE";
+
+    // Class Attribute
     private Location currentLocation;
     private LocationManager locationManager;
     private RequestDialogFragment mrequestDialogFragment;
@@ -120,6 +131,10 @@ public class AvialabilityFragment extends Fragment {
 
         onLocationPermissionGrantedHandler = createOnLocationPermissionGrantedHandler();
         locationChangeReceiver = new LocationChangeReceiver();
+
+        if (MainActivity.mdriver.getState().equals(AppPreferences.ONLINE)) {
+            setDriverOnline();
+        }
 
         Log.d(TAG, "init - End");
     }
@@ -251,6 +266,12 @@ public class AvialabilityFragment extends Fragment {
                 setDriverUIOnline();
 
                 AppPreferences.isOnline = true;
+                MainActivity.mdriver.setState(AppPreferences.ONLINE);
+                AppSettings appSettings = AppSettings.getInstance();
+                appSettings.saveUser(MainActivity.mdriver);
+
+                // call online endpoint
+                onlineEndpoint();
 
                 if (currentLocation != null) {
                     setFirebaseDriverLocation();
@@ -285,7 +306,7 @@ public class AvialabilityFragment extends Fragment {
                 DatabaseReference mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
                 mRef.removeEventListener(mtripEventListener);
 
-                // Remove Driver from firebase realtime database
+                // Remove D river from firebase realtime database
                 mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"");
                 mRef.removeValue();
 
@@ -297,6 +318,12 @@ public class AvialabilityFragment extends Fragment {
                 setDriverUIOffline();
 
                 AppPreferences.isOnline = false;
+                MainActivity.mdriver.setState(AppPreferences.LOGGED_IN);
+                AppSettings appSettings = AppSettings.getInstance();
+                appSettings.saveUser(MainActivity.mdriver);
+
+                // call offline endpoint
+                offlineEndpoint();
             }
         };
 
@@ -479,4 +506,208 @@ public class AvialabilityFragment extends Fragment {
             Log.d(TAG, "LocationChangeReceiver - onReceive - End");
         }
     }
+
+    private void onlineEndpoint() {
+
+        Log.d(TAG, "onlineEndpoint - Start");
+
+        try {
+
+            String url = AppPreferences.BASE_URL + "/driver";
+
+            JsonDriverStatus request = new JsonDriverStatus();
+            request.setAvilability(ONLINE);
+
+            // Create Gson object
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            gsonBuilder.excludeFieldsWithoutExposeAnnotation();
+            final Gson gson = gsonBuilder.create();
+
+            JSONObject jsonObject = new JSONObject(gson.toJson(request));
+
+            Log.d(TAG, "onlineEndpoint - Json Request"+ gson.toJson(request));
+
+            // Call user login service
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, url, jsonObject,
+
+                    new Response.Listener<JSONObject>() {
+
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            // Response Handling
+                            Log.d(TAG, "onlineEndpoint - onResponse - Start");
+
+                            Log.d(TAG, "onlineEndpoint - onResponse - Json Response: " + response.toString());
+
+                            String responseData = response.toString();
+
+                            JsonDriverStatus jsonResponse = gson.fromJson(responseData, JsonDriverStatus.class);
+
+                            Log.d(TAG, "onlineEndpoint - onResponse - Status: " + jsonResponse.getJsonMeta().getStatus());
+                            Log.d(TAG, "onlineEndpoint - onResponse - Message: " + jsonResponse.getJsonMeta().getMessage());
+
+                            // check status  code of response
+                            if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
+                                // Success
+
+                            }
+                            else {
+                                // Failure
+                            }
+
+                            Log.d(TAG, "onlineEndpoint - onResponse - End");
+                        }
+                    },
+
+                    new Response.ErrorListener() {
+
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            // Network Error Handling
+                            Log.d(TAG, "onlineEndpoint - onErrorResponse: " + error.toString());
+
+                            if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
+                                NetworkResponse response = error.networkResponse;
+                                String responseData = new String(response.data);
+
+                                JsonDriverStatus jsonResponse = gson.fromJson(responseData, JsonDriverStatus.class);
+
+                                Log.d(TAG, "onlineEndpoint - Error Status: " + jsonResponse.getJsonMeta().getStatus());
+                                Log.d(TAG, "onlineEndpoint - Error Message: " + jsonResponse.getJsonMeta().getMessage());
+
+                                Toast.makeText(getContext(), jsonResponse.getJsonMeta().getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }
+            ) {
+
+                /**
+                 * Passing some request headers
+                 */
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    HashMap<String, String> headers = new HashMap<String, String>();
+                    headers.put("Content-Type", "application/json; charset=utf-8");
+                    headers.put("Accept", "*");
+                    headers.put("Authorization", "Token token=" + MainActivity.mdriver.getToken());
+
+                    Log.d(TAG, "onlineEndpoint - Json Header - "+ "Token token=" + MainActivity.mdriver.getToken());
+                    return headers;
+                }
+            };
+
+            // Adding retry policy to request
+            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(AppPreferences.VOLLEY_TIME_OUT, AppPreferences.VOLLEY_RETRY_COUNTER, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+            MyVolley.getInstance(getContext()).addToRequestQueue(jsonObjectRequest);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        Log.d(TAG, "onlineEndpoint - End");
+    }
+
+    private void offlineEndpoint() {
+
+        Log.d(TAG, "offlineEndpoint - Start");
+
+        try {
+
+            String url = AppPreferences.BASE_URL + "/driver";
+
+            JsonDriverStatus request = new JsonDriverStatus();
+            request.setAvilability(OFFLINE);
+
+            // Create Gson object
+            GsonBuilder gsonBuilder = new GsonBuilder();
+            gsonBuilder.excludeFieldsWithoutExposeAnnotation();
+            final Gson gson = gsonBuilder.create();
+
+            JSONObject jsonObject = new JSONObject(gson.toJson(request));
+
+            Log.d(TAG, "offlineEndpoint - Json Request"+ gson.toJson(request));
+
+            // Call offline service
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, url, jsonObject,
+
+                    new Response.Listener<JSONObject>() {
+
+                        @Override
+                        public void onResponse(JSONObject response) {
+                            // Response Handling
+                            Log.d(TAG, "offlineEndpoint - onResponse - Start");
+
+                            Log.d(TAG, "offlineEndpoint - onResponse - Json Response: " + response.toString());
+
+                            String responseData = response.toString();
+
+                            JsonDriverStatus jsonResponse = gson.fromJson(responseData, JsonDriverStatus.class);
+
+                            Log.d(TAG, "offlineEndpoint - onResponse - Status: " + jsonResponse.getJsonMeta().getStatus());
+                            Log.d(TAG, "offlineEndpoint - onResponse - Message: " + jsonResponse.getJsonMeta().getMessage());
+
+                            // check status  code of response
+                            if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
+                                // Success
+
+                            }
+                            else {
+                                // Failure
+                            }
+
+                            Log.d(TAG, "offlineEndpoint - onResponse - End");
+                        }
+                    },
+
+                    new Response.ErrorListener() {
+
+                        @Override
+                        public void onErrorResponse(VolleyError error) {
+                            // Network Error Handling
+                            Log.d(TAG, "offlineEndpoint - onErrorResponse: " + error.toString());
+
+                            if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
+                                NetworkResponse response = error.networkResponse;
+                                String responseData = new String(response.data);
+
+                                JsonDriverStatus jsonResponse = gson.fromJson(responseData, JsonDriverStatus.class);
+
+                                Log.d(TAG, "offlineEndpoint - Error Status: " + jsonResponse.getJsonMeta().getStatus());
+                                Log.d(TAG, "offlineEndpoint - Error Message: " + jsonResponse.getJsonMeta().getMessage());
+
+                                Toast.makeText(getContext(), jsonResponse.getJsonMeta().getMessage(), Toast.LENGTH_SHORT).show();
+                            }
+                        }
+                    }
+            ) {
+
+                /**
+                 * Passing some request headers
+                 */
+                @Override
+                public Map<String, String> getHeaders() throws AuthFailureError {
+                    HashMap<String, String> headers = new HashMap<String, String>();
+                    headers.put("Content-Type", "application/json; charset=utf-8");
+                    headers.put("Accept", "*");
+                    headers.put("Authorization", "Token token=" + MainActivity.mdriver.getToken());
+
+                    Log.d(TAG, "offlineEndpoint - Json Header - "+ "Token token=" + MainActivity.mdriver.getToken());
+
+                    return headers;
+                }
+            };
+
+            // Adding retry policy to request
+            jsonObjectRequest.setRetryPolicy(new DefaultRetryPolicy(AppPreferences.VOLLEY_TIME_OUT, AppPreferences.VOLLEY_RETRY_COUNTER, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
+
+            MyVolley.getInstance(getContext()).addToRequestQueue(jsonObjectRequest);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        Log.d(TAG, "offlineEndpoint - End");
+    }
+
 }

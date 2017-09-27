@@ -18,11 +18,14 @@
     <string name="permission_rationale">Contacts permissions are needed for providing email
         completions.
     </string>
+    <string name="error_invalid_phone_number">This phone number is incorrect</string>
+    <string name="success_sign_up">Account is created Successfully</string>
 
     <string name="login_error">Invalid Username and Password</string>
     <string name="signup_error">Error during signup, please try later</string>
     <string name="try_error">Try later</string>
     <string name="enable_gps">Enable GPS</string>
+
 
     <string name="offline_msg">Are you sure to be offline?</string>
     <string name="offline_des_msg">You won\'t be available to receive delivery requests.</string>
@@ -54,5 +57,6 @@
     <string name="GPS_disabled_warning_msg">You must enable location access in order to proceed
         using the app.</string>
     <string name="ok_btn_dialog">Ok</string>
+
 
 </resources>

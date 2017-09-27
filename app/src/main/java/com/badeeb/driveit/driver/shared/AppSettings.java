@@ -8,12 +8,15 @@ import com.badeeb.driveit.driver.R;
 import com.badeeb.driveit.driver.controllers.DriveItApplication;
 import com.badeeb.driveit.driver.model.User;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 
 /**
  * Created by meldeeb on 9/25/17.
  */
 
-public class Settings {
+public class AppSettings {
 
     private final static String PREF_USER_ID = "PREF_USER_ID";
     private final static String PREF_USER_MOBILE_NUMBER = "PREF_PHONE_NUMBER";
@@ -21,20 +24,21 @@ public class Settings {
     private final static String PREF_USER_EMAIL = "PREF_USER_EMAIL";
     private final static String PREF_USER_TOKEN = "PREF_USER_TOKEN";
     private final static String PREF_USER_IMAGE_URL = "PREF_USER_IMAGE_URL";
+    private final static String PREF_USER_STATE = "PREF_USER_STATE";
 
-    private static Settings sInstance;
+    private static AppSettings sInstance;
 
     private SharedPreferences sPreferences;
 
-    public static Settings getInstance() {
+    public static AppSettings getInstance() {
         if (sInstance == null) {
-            sInstance = new Settings(DriveItApplication.getInstance());
+            sInstance = new AppSettings(DriveItApplication.getInstance());
         }
         return sInstance;
     }
 
 
-    private Settings(Context context) {
+    private AppSettings(Context context) {
         String fileName = context.getString(R.string.app_name);
         this.sPreferences = context.getSharedPreferences(fileName, Context.MODE_PRIVATE);
     }
@@ -55,6 +59,7 @@ public class Settings {
         user.setPhoneNumber(getUserMobileNumber());
         user.setPhotoUrl(getUserImageUrl());
         user.setToken(getUserToken());
+        user.setState(getUserState());
         return user;
     }
 
@@ -65,6 +70,7 @@ public class Settings {
         setUserEmail(user.getEmail());
         setUserImageUrl(user.getPhotoUrl());
         setUserToken(user.getToken());
+        setUserState(user.getState());
     }
 
     public void clearUserInfo() {
@@ -74,7 +80,8 @@ public class Settings {
                 .remove(PREF_USER_IMAGE_URL)
                 .remove(PREF_USER_TOKEN)
                 .remove(PREF_USER_NAME)
-                .remove(PREF_USER_MOBILE_NUMBER);
+                .remove(PREF_USER_MOBILE_NUMBER)
+                .remove(PREF_USER_STATE);
         editor.commit();
     }
 
@@ -107,6 +114,10 @@ public class Settings {
         putValue(PREF_USER_TOKEN, prefUserToken);
     }
 
+    public void setUserState(String userStatus) {
+        putValue(PREF_USER_STATE, userStatus);
+    }
+
     public int getUserId() {
         return getValue(PREF_USER_ID, 0);
     }
@@ -129,6 +140,10 @@ public class Settings {
 
     public String getUserImageUrl() {
         return getValue(PREF_USER_IMAGE_URL, "");
+    }
+
+    public String getUserState() {
+        return getValue(PREF_USER_STATE, "");
     }
 
     private void putValue(String key, int value) {

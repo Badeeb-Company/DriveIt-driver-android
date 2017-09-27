@@ -6,6 +6,9 @@ import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 /**
  * Created by Amr Alghawy on 6/12/2017.
  */
@@ -27,6 +30,11 @@ public class AppPreferences {
     public static boolean isOnline = false;
     public static final String TRIP_PENDING = "PENDING";
 
+    // Driver status
+    public static final String LOGGED_IN = "LOGGED_IN";
+    public static final String ONLINE = "ONLINE";
+    public static final String IN_TRIP = "IN_TRIP";
+
     // Location updates constants
     public static final int UPDATE_TIME = 3000;    // Millisecoonds
     public static final int UPDATE_DISTANCE = 0;
@@ -37,20 +45,28 @@ public class AppPreferences {
         return context.getSharedPreferences(TAG, Activity.MODE_PRIVATE);
     }
 
-    public static void setToken(Context context, String value){
-        SharedPreferences.Editor editor = getAppPreferences(context).edit();
-        editor.putString(TOKEN_KEY, value);
-        editor.commit();
-    }
-
-    public static String getToken(Context context){
-        return getAppPreferences(context).getString(TOKEN_KEY, null);
-    }
-
     public static boolean isNetworkAvailable(Context context) {
         ConnectivityManager connectivityManager
                 = (ConnectivityManager) context.getSystemService(context.CONNECTIVITY_SERVICE);
         NetworkInfo activeNetworkInfo = connectivityManager.getActiveNetworkInfo();
         return activeNetworkInfo != null && activeNetworkInfo.isConnected();
+    }
+
+    public static boolean isEmailValid(String email) {
+        String expression = "^[\\w\\.-]+@([\\w\\-]+\\.)+[A-Z]{2,4}$";
+        Pattern pattern = Pattern.compile(expression, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(email);
+        return matcher.matches();
+    }
+
+    public static boolean isPasswordValid(String password) {
+        return password.length() >= 6;
+    }
+
+    public static boolean isPhoneNumberValid(String email) {
+        String expression = "^[+]?[0-9]{8,25}$";
+        Pattern pattern = Pattern.compile(expression, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(email);
+        return matcher.matches();
     }
 }
