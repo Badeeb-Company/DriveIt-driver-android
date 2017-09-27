@@ -33,6 +33,7 @@ import com.badeeb.driveit.driver.model.JsonRequestTrip;
 import com.badeeb.driveit.driver.model.Trip;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
+import com.badeeb.driveit.driver.shared.AppSettings;
 import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -55,6 +56,7 @@ public class TripDetailsFragment extends Fragment {
 
     // Class Attributes
     private Trip mtrip;
+    private AppSettings settings;
 
     public TripDetailsFragment() {
         // Required empty public constructor
@@ -99,6 +101,8 @@ public class TripDetailsFragment extends Fragment {
 
         // Setup Listeners
         setupListeners(view);
+
+        settings = AppSettings.getInstance();
 
         // Refresh menu toolbar
         ((MainActivity) getActivity()).enbleNavigationView();
@@ -186,13 +190,11 @@ public class TripDetailsFragment extends Fragment {
                             // check status  code of response
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success tripComplete
-                                // Move to next screen --> Main Activity
-                                AvialabilityFragment avialabilityFragment = new AvialabilityFragment();
-                                FragmentManager fragmentManager = getFragmentManager();
-                                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                                fragmentTransaction.add(R.id.main_frame, avialabilityFragment, avialabilityFragment.TAG);
-//                                fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
-                                fragmentTransaction.commit();
+
+                                MainActivity.mdriver.setState(AppPreferences.TRIP_COMPLETED);
+                                settings.clearTripInfo();
+
+                                goToAvailabilityFragment();
 
 
                             }
@@ -251,6 +253,15 @@ public class TripDetailsFragment extends Fragment {
 
         Log.d(TAG, "tripComplete - End");
 
+    }
+
+    private void goToAvailabilityFragment() {
+        AvailabilityFragment availabilityFragment = new AvailabilityFragment();
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.main_frame, availabilityFragment, availabilityFragment.TAG);
+//                                fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        fragmentTransaction.commit();
     }
 
 }

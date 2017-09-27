@@ -291,10 +291,10 @@ public class LoginFragment extends Fragment {
     private void goToAvialabilityFragment() {
         Log.d(TAG, "goToAvialabilityFragment - Start");
 
-        AvialabilityFragment avialabilityFragment = new AvialabilityFragment();
+        AvailabilityFragment availabilityFragment = new AvailabilityFragment();
         FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.main_frame, avialabilityFragment, avialabilityFragment.TAG);
+        fragmentTransaction.add(R.id.main_frame, availabilityFragment, availabilityFragment.TAG);
         fragmentTransaction.commit();
 
         Log.d(TAG, "goToAvialabilityFragment - End");

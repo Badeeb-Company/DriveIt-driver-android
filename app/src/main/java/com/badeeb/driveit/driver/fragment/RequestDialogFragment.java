@@ -28,6 +28,7 @@ import com.badeeb.driveit.driver.model.JsonRequestTrip;
 import com.badeeb.driveit.driver.model.Trip;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
+import com.badeeb.driveit.driver.shared.AppSettings;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -128,8 +129,8 @@ public class RequestDialogFragment extends DialogFragment {
 
         String url = AppPreferences.BASE_URL + "/trip" + "/" + mtrip.getId() + "/accept ";
 
-        final AvialabilityFragment avialabilityFragment = (AvialabilityFragment) getTargetFragment();
-        ;
+        final AvailabilityFragment availabilityFragment = (AvailabilityFragment) getTargetFragment();
+
 
         try {
 
@@ -167,22 +168,19 @@ public class RequestDialogFragment extends DialogFragment {
                             // check status  code of response
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success Ride Acceptance
-                                avialabilityFragment.showRideAcceptMessage(true);
+                                availabilityFragment.showRideAcceptMessage(true);
 
-                                TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
-                                Bundle bundle = new Bundle();
-                                bundle.putParcelable("trip", Parcels.wrap(mtrip));
-                                tripDetailsFragment.setArguments(bundle);
+                                MainActivity.mdriver.setState(AppPreferences.IN_TRIP);
 
-                                FragmentManager fragmentManager = avialabilityFragment.getFragmentManager();
-                                FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+                                AppSettings settings = AppSettings.getInstance();
+                                settings.saveUser(MainActivity.mdriver);
+                                settings.saveTrip(mtrip);
 
-                                fragmentTransaction.add(R.id.main_frame, tripDetailsFragment, tripDetailsFragment.TAG);
-                                fragmentTransaction.commit();
+                                gotToTripDetailsFragment(availabilityFragment.getFragmentManager());
 
                             } else {
                                 // Invalid Ride Acceptance
-                                avialabilityFragment.showRideAcceptMessage(false);
+                                availabilityFragment.showRideAcceptMessage(false);
                             }
 
 
@@ -209,7 +207,7 @@ public class RequestDialogFragment extends DialogFragment {
                                 Log.d(TAG, "acceptRide - Error Status: " + jsonResponse.getJsonMeta().getStatus());
                                 Log.d(TAG, "acceptRide - Error Message: " + jsonResponse.getJsonMeta().getMessage());
 
-                                avialabilityFragment.displayMessage(jsonResponse.getJsonMeta().getMessage());
+                                availabilityFragment.displayMessage(jsonResponse.getJsonMeta().getMessage());
                             }
                         }
                     }
@@ -247,7 +245,7 @@ public class RequestDialogFragment extends DialogFragment {
 
         String url = AppPreferences.BASE_URL + "/trip" + "/" + mtrip.getId() + "/reject ";
 
-        final AvialabilityFragment avialabilityFragment = (AvialabilityFragment) getTargetFragment();
+        final AvailabilityFragment availabilityFragment = (AvailabilityFragment) getTargetFragment();
 
         try {
 
@@ -285,10 +283,10 @@ public class RequestDialogFragment extends DialogFragment {
                             // check status  code of response
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success Ride Acceptance
-                                avialabilityFragment.showRideRejectMessage(true);
+                                availabilityFragment.showRideRejectMessage(true);
                             } else {
                                 // Invalid Ride Acceptance
-                                avialabilityFragment.showRideRejectMessage(false);
+                                availabilityFragment.showRideRejectMessage(false);
                             }
 
 
@@ -315,7 +313,7 @@ public class RequestDialogFragment extends DialogFragment {
                                 Log.d(TAG, "rejectRide - Error Status: " + jsonResponse.getJsonMeta().getStatus());
                                 Log.d(TAG, "rejectRide - Error Message: " + jsonResponse.getJsonMeta().getMessage());
 
-                                avialabilityFragment.displayMessage(jsonResponse.getJsonMeta().getMessage());
+                                availabilityFragment.displayMessage(jsonResponse.getJsonMeta().getMessage());
                             }
                         }
                     }
@@ -356,4 +354,15 @@ public class RequestDialogFragment extends DialogFragment {
         getDialog().getWindow().setBackgroundDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.rounded_corner_white));
     }
 
+    private void gotToTripDetailsFragment(FragmentManager fragmentManager) {
+        TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("trip", Parcels.wrap(mtrip));
+        tripDetailsFragment.setArguments(bundle);
+
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+
+        fragmentTransaction.add(R.id.main_frame, tripDetailsFragment, tripDetailsFragment.TAG);
+        fragmentTransaction.commit();
+    }
 }

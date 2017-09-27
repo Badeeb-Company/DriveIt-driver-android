@@ -34,6 +34,7 @@ public class AppPreferences {
     public static final String LOGGED_IN = "LOGGED_IN";
     public static final String ONLINE = "ONLINE";
     public static final String IN_TRIP = "IN_TRIP";
+    public static final String TRIP_COMPLETED = "TRIP_COMPLETED";
 
     // Location updates constants
     public static final int UPDATE_TIME = 3000;    // Millisecoonds

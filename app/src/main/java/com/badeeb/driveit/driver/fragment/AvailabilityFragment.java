@@ -59,10 +59,10 @@ import java.util.Map;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class AvialabilityFragment extends Fragment {
+public class AvailabilityFragment extends Fragment {
 
     // Logging Purpose
-    public static final String TAG = AvialabilityFragment.class.getSimpleName();
+    public static final String TAG = AvailabilityFragment.class.getSimpleName();
 
     // Constants
     private final int DIALOG_RESULT = 200;
@@ -88,7 +88,7 @@ public class AvialabilityFragment extends Fragment {
     // Firebase database reference
     private FirebaseManager mDatabase;
 
-    public AvialabilityFragment() {
+    public AvailabilityFragment() {
         // Required empty public constructor
     }
 
@@ -134,6 +134,9 @@ public class AvialabilityFragment extends Fragment {
 
         if (MainActivity.mdriver.getState().equals(AppPreferences.ONLINE)) {
             setDriverOnline();
+        }
+        else if (MainActivity.mdriver.getState().equals(AppPreferences.TRIP_COMPLETED)) {
+            setDriverUIOnline();
         }
 
         Log.d(TAG, "init - End");
@@ -199,7 +202,7 @@ public class AvialabilityFragment extends Fragment {
                 Log.d(TAG, "setupListeners - ivOffline_onClick - Start");
 
                 // Check if location permission is granted or not
-                PermissionsChecker.checkPermissions(AvialabilityFragment.this, onLocationPermissionGrantedHandler,
+                PermissionsChecker.checkPermissions(AvailabilityFragment.this, onLocationPermissionGrantedHandler,
                         PERM_LOCATION_RQST_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
 
 
@@ -435,7 +438,7 @@ public class AvialabilityFragment extends Fragment {
                         mrequestDialogFragment.setArguments(bundle);
                         mrequestDialogFragment.setCancelable(false);
 
-                        mrequestDialogFragment.setTargetFragment(AvialabilityFragment.this, DIALOG_RESULT);
+                        mrequestDialogFragment.setTargetFragment(AvailabilityFragment.this, DIALOG_RESULT);
                         showDialog();
                     }
                     else {

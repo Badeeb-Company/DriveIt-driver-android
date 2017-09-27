@@ -22,8 +22,9 @@ import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.badeeb.driveit.driver.R;
-import com.badeeb.driveit.driver.fragment.AvialabilityFragment;
+import com.badeeb.driveit.driver.fragment.AvailabilityFragment;
 import com.badeeb.driveit.driver.fragment.LoginFragment;
+import com.badeeb.driveit.driver.fragment.TripDetailsFragment;
 import com.badeeb.driveit.driver.model.JsonLogout;
 import com.badeeb.driveit.driver.model.User;
 import com.badeeb.driveit.driver.network.MyVolley;
@@ -33,6 +34,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.json.JSONObject;
+import org.parceler.Parcels;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -126,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
             if (mdriver.getState().equals(AppPreferences.IN_TRIP)) {
                 // Go to trip details fragment
+                gotToTripDetailsFragment();
             }
             else if (mdriver.getState().equals(AppPreferences.ONLINE)) {
                 // Go to Availability fragment
@@ -143,10 +146,22 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Log.d(TAG, "init - End");
     }
 
-    private void goToAvialabilityFragment() {
-        AvialabilityFragment avialabilityFragment = new AvialabilityFragment();
+    private void gotToTripDetailsFragment() {
+        TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
+
+        Bundle bundle = new Bundle();
+        bundle.putParcelable("trip", Parcels.wrap(msettings.getTrip()));
+        tripDetailsFragment.setArguments(bundle);
+
         FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.main_frame, avialabilityFragment, avialabilityFragment.TAG);
+        fragmentTransaction.add(R.id.main_frame, tripDetailsFragment, tripDetailsFragment.TAG);
+        fragmentTransaction.commit();
+    }
+
+    private void goToAvialabilityFragment() {
+        AvailabilityFragment availabilityFragment = new AvailabilityFragment();
+        FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.main_frame, availabilityFragment, availabilityFragment.TAG);
         fragmentTransaction.commit();
     }
 
