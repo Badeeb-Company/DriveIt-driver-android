@@ -143,10 +143,10 @@ public class AvailabilityFragment extends Fragment {
         locationChangeReceiver = new LocationChangeReceiver();
         initGoogleApiClient();
 
-        if (MainActivity.mdriver.getState().equals(AppPreferences.ONLINE)) {
+        if (((MainActivity) getActivity()).getDriver().getState().equals(AppPreferences.ONLINE)) {
             setDriverOnline();
         }
-        else if (MainActivity.mdriver.getState().equals(AppPreferences.TRIP_COMPLETED)) {
+        else if (((MainActivity) getActivity()).getDriver().getState().equals(AppPreferences.TRIP_COMPLETED)) {
             setDriverUIOnline();
         }
 
@@ -298,9 +298,9 @@ public class AvailabilityFragment extends Fragment {
             public void onClick(DialogInterface dialogInterface, int i) {
 
                 // Put Driver under firebase realtime database
-                firebaseManager.createChildReference("drivers", MainActivity.mdriver.getId()+"", "state").setValue("available");
+                firebaseManager.createChildReference("drivers", ((MainActivity) getActivity()).getDriver().getId()+"", "state").setValue("available");
 
-                DatabaseReference mRef = firebaseManager.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
+                DatabaseReference mRef = firebaseManager.createChildReference("drivers", ((MainActivity) getActivity()).getDriver().getId()+"", "trip");
 
                 // Start Listening for Firebase
                 mtripEventListener = createValueEventListener();
@@ -310,9 +310,9 @@ public class AvailabilityFragment extends Fragment {
                 setDriverUIOnline();
 
                 AppPreferences.isOnline = true;
-                MainActivity.mdriver.setState(AppPreferences.ONLINE);
+                ((MainActivity) getActivity()).getDriver().setState(AppPreferences.ONLINE);
                 AppSettings appSettings = AppSettings.getInstance();
-                appSettings.saveUser(MainActivity.mdriver);
+                appSettings.saveUser(((MainActivity) getActivity()).getDriver());
 
                 // call online endpoint
                 onlineEndpoint();
@@ -352,15 +352,15 @@ public class AvailabilityFragment extends Fragment {
             public void onClick(DialogInterface dialogInterface, int i) {
 
                 // Stop listening
-                DatabaseReference mRef = firebaseManager.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
+                DatabaseReference mRef = firebaseManager.createChildReference("drivers", ((MainActivity) getActivity()).getDriver().getId()+"", "trip");
                 mRef.removeEventListener(mtripEventListener);
                 // Change image to offline
                 setDriverUIOffline();
 
                 AppPreferences.isOnline = false;
-                MainActivity.mdriver.setState(AppPreferences.LOGGED_IN);
+                ((MainActivity) getActivity()).getDriver().setState(AppPreferences.LOGGED_IN);
                 AppSettings appSettings = AppSettings.getInstance();
-                appSettings.saveUser(MainActivity.mdriver);
+                appSettings.saveUser(((MainActivity) getActivity()).getDriver());
 
                 disconnectGoogleApiClient();
 
@@ -421,8 +421,8 @@ public class AvailabilityFragment extends Fragment {
         Log.d(TAG, "setFirebaseDriverLocation - Start");
 
         DatabaseReference mRef = firebaseManager.createChildReference("locations");
-        mRef.child("drivers").child(MainActivity.mdriver.getId()+"").child("lat").setValue(currentLocation.getLatitude() + new Random().nextInt()%5);
-        mRef.child("drivers").child(MainActivity.mdriver.getId()+"").child("long").setValue(currentLocation.getLongitude());
+        mRef.child("drivers").child(((MainActivity) getActivity()).getDriver().getId()+"").child("lat").setValue(currentLocation.getLatitude() + new Random().nextInt()%5);
+        mRef.child("drivers").child(((MainActivity) getActivity()).getDriver().getId()+"").child("long").setValue(currentLocation.getLongitude());
 
         Log.d(TAG, "setFirebaseDriverLocation - End");
     }
@@ -618,9 +618,9 @@ public class AvailabilityFragment extends Fragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + MainActivity.mdriver.getToken());
+                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
 
-                    Log.d(TAG, "onlineEndpoint - Json Header - "+ "Token token=" + MainActivity.mdriver.getToken());
+                    Log.d(TAG, "onlineEndpoint - Json Header - "+ "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
                     return headers;
                 }
             };
@@ -719,9 +719,9 @@ public class AvailabilityFragment extends Fragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + MainActivity.mdriver.getToken());
+                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
 
-                    Log.d(TAG, "offlineEndpoint - Json Header - "+ "Token token=" + MainActivity.mdriver.getToken());
+                    Log.d(TAG, "offlineEndpoint - Json Header - "+ "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
 
                     return headers;
                 }

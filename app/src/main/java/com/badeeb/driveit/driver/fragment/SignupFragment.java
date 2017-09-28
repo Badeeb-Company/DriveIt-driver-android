@@ -58,6 +58,8 @@ public class SignupFragment extends Fragment {
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/driver";
 
+    private User mdriver;
+
     //
     private static final int PERMISSION_READ_STORAGE = 145;
     private static final int IMAGE_GALLERY_REQUEST = 10;
@@ -85,7 +87,7 @@ public class SignupFragment extends Fragment {
         Log.d(TAG, "init - Start");
 
         // Attributes initialization
-        MainActivity.mdriver = new User();
+        mdriver = new User();
 
 		progressDialog = UiUtils.createProgressDialog(getActivity(), R.style.DialogTheme);
 
@@ -118,11 +120,11 @@ public class SignupFragment extends Fragment {
                 // Enable Progress bar
                 progressDialog.show();
 
-                MainActivity.mdriver.setName(name.getText().toString());
-                MainActivity.mdriver.setEmail(email.getText().toString());
-                MainActivity.mdriver.setPassword(password.getText().toString());
-                MainActivity.mdriver.setPhotoUrl("http://solarviews.com/raw/earth/earthafr.jpg"); // to be changed
-                MainActivity.mdriver.setPhoneNumber(phone.getText().toString());
+                mdriver.setName(name.getText().toString());
+                mdriver.setEmail(email.getText().toString());
+                mdriver.setPassword(password.getText().toString());
+                mdriver.setPhotoUrl("http://solarviews.com/raw/earth/earthafr.jpg"); // to be changed
+                mdriver.setPhoneNumber(phone.getText().toString());
 
                 // Check signup using network call
                 signup();
@@ -160,7 +162,7 @@ public class SignupFragment extends Fragment {
         try {
 
             JsonSignUp request = new JsonSignUp();
-            request.setUser(MainActivity.mdriver);
+            request.setUser(mdriver);
 
             // Create Gson object
             GsonBuilder gsonBuilder = new GsonBuilder();

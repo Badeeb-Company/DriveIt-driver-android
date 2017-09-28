@@ -53,7 +53,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private NavigationView mnavigationView;
     private AppSettings msettings;
 
-    public static User mdriver;
+    private User mdriver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -190,6 +190,19 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mtoggle.setDrawerIndicatorEnabled(true);
     }
 
+    public void setDriver(User driver){
+       mdriver = driver;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+    }
+
+    public User getDriver(){
+        return mdriver;
+    }
+
     private void logout() {
         Log.d(TAG, "logout - Start");
 
@@ -266,9 +279,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + MainActivity.mdriver.getToken());
+                    headers.put("Authorization", "Token token=" + mdriver.getToken());
 
-                    Log.d(TAG, "logout - getHeaders_Authorization: " + "Token token=" + MainActivity.mdriver.getToken());
+                    Log.d(TAG, "logout - getHeaders_Authorization: " + "Token token=" + mdriver.getToken());
 
                     return headers;
                 }

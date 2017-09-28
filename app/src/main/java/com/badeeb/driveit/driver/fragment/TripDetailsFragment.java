@@ -190,8 +190,8 @@ public class TripDetailsFragment extends Fragment {
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success tripComplete
 
-                                MainActivity.mdriver.setState(AppPreferences.TRIP_COMPLETED);
-                                settings.saveUser(MainActivity.mdriver);
+                                ((MainActivity) getActivity()).getDriver().setState(AppPreferences.TRIP_COMPLETED);
+                                settings.saveUser(((MainActivity) getActivity()).getDriver());
                                 settings.clearTripInfo();
 
                                 goToAvailabilityFragment();
@@ -237,7 +237,7 @@ public class TripDetailsFragment extends Fragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + MainActivity.mdriver.getToken());
+                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
                     return headers;
                 }
             };

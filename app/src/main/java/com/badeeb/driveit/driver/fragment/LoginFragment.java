@@ -57,6 +57,7 @@ public class LoginFragment extends Fragment {
     private EditText mPasswordView;
     private Toolbar mToolbar;
     private ProgressDialog progressDialog;
+    private User mdriver;
 
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/driver/login";
@@ -86,7 +87,7 @@ public class LoginFragment extends Fragment {
         Log.d(TAG, "init - Start");
 
         // Attributes Initialization
-        MainActivity.mdriver = new User();
+        mdriver = new User();
         // Email
         this.mEmailView = (AutoCompleteTextView) view.findViewById(R.id.email);
         // Password
@@ -119,8 +120,8 @@ public class LoginFragment extends Fragment {
                 String userEmail = mEmailView.getText().toString();
                 String userPassword = mPasswordView.getText().toString();
 
-                MainActivity.mdriver.setEmail(userEmail);
-                MainActivity.mdriver.setPassword(userPassword);
+                mdriver.setEmail(userEmail);
+                mdriver.setPassword(userPassword);
 
                 // Check login using network call
                 login();
@@ -171,7 +172,7 @@ public class LoginFragment extends Fragment {
 
         try {
             JsonLogin request = new JsonLogin();
-            request.setUser(MainActivity.mdriver);
+            request.setUser(mdriver);
 
             // Create Gson object
             GsonBuilder gsonBuilder = new GsonBuilder();
@@ -205,12 +206,14 @@ public class LoginFragment extends Fragment {
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success login
                                 // Move to next screen --> Main Activity
-                                MainActivity.mdriver = jsonResponse.getUser();
+                                mdriver = jsonResponse.getUser();
 
-                                MainActivity.mdriver.setState(AppPreferences.LOGGED_IN);
+                                mdriver.setState(AppPreferences.LOGGED_IN);
 
                                 AppSettings settings = AppSettings.getInstance();
-                                settings.saveUser(MainActivity.mdriver);
+                                settings.saveUser(mdriver);
+
+                                ((MainActivity) getActivity()).setDriver(mdriver);
 
                                 // Move to avialability fragment
                                 goToAvialabilityFragment();

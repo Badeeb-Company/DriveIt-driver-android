@@ -170,10 +170,10 @@ public class RequestDialogFragment extends DialogFragment {
                                 // Success Ride Acceptance
                                 availabilityFragment.showRideAcceptMessage(true);
 
-                                MainActivity.mdriver.setState(AppPreferences.IN_TRIP);
+                                ((MainActivity) getActivity()).getDriver().setState(AppPreferences.IN_TRIP);
 
                                 AppSettings settings = AppSettings.getInstance();
-                                settings.saveUser(MainActivity.mdriver);
+                                settings.saveUser(((MainActivity) getActivity()).getDriver());
                                 settings.saveTrip(mtrip);
 
                                 gotToTripDetailsFragment(availabilityFragment.getFragmentManager());
@@ -221,7 +221,7 @@ public class RequestDialogFragment extends DialogFragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + MainActivity.mdriver.getToken());
+                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
                     return headers;
                 }
             };
@@ -327,7 +327,7 @@ public class RequestDialogFragment extends DialogFragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + MainActivity.mdriver.getToken());
+                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
                     return headers;
                 }
             };
