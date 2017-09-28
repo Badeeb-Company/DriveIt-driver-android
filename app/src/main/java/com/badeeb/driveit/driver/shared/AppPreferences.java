@@ -40,6 +40,9 @@ public class AppPreferences {
     public static final int UPDATE_TIME = 3000;    // Millisecoonds
     public static final int UPDATE_DISTANCE = 0;
 
+    // Splash Screen timeout
+    public static final int SPLASH_TIME_OUT = 3000;
+
     // Shared Preferences Keys
 
     public static SharedPreferences getAppPreferences(Context context) {
