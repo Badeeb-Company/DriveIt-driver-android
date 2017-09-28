@@ -61,6 +61,7 @@ import org.parceler.Parcels;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -92,7 +93,7 @@ public class AvailabilityFragment extends Fragment {
     private NotificationsManager notificationsManager;
 
     // Firebase database reference
-    private FirebaseManager mDatabase;
+    private FirebaseManager firebaseManager;
     private GoogleApiClient mGoogleApiClient;
     private LocationListener locationListener;
 
@@ -119,7 +120,7 @@ public class AvailabilityFragment extends Fragment {
         Log.d(TAG, "init - Start");
 
         // Initiate firebase realtime - database
-        this.mDatabase = new FirebaseManager();
+        this.firebaseManager = new FirebaseManager();
         ivOffline = view.findViewById(R.id.ivOffline);
         ivOnline = view.findViewById(R.id.ivOnline);
         locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
@@ -297,9 +298,9 @@ public class AvailabilityFragment extends Fragment {
             public void onClick(DialogInterface dialogInterface, int i) {
 
                 // Put Driver under firebase realtime database
-                mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "state").setValue("available");
+                firebaseManager.createChildReference("drivers", MainActivity.mdriver.getId()+"", "state").setValue("available");
 
-                DatabaseReference mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
+                DatabaseReference mRef = firebaseManager.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
 
                 // Start Listening for Firebase
                 mtripEventListener = createValueEventListener();
@@ -351,7 +352,7 @@ public class AvailabilityFragment extends Fragment {
             public void onClick(DialogInterface dialogInterface, int i) {
 
                 // Stop listening
-                DatabaseReference mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
+                DatabaseReference mRef = firebaseManager.createChildReference("drivers", MainActivity.mdriver.getId()+"", "trip");
                 mRef.removeEventListener(mtripEventListener);
                 // Change image to offline
                 setDriverUIOffline();
@@ -360,6 +361,8 @@ public class AvailabilityFragment extends Fragment {
                 MainActivity.mdriver.setState(AppPreferences.LOGGED_IN);
                 AppSettings appSettings = AppSettings.getInstance();
                 appSettings.saveUser(MainActivity.mdriver);
+
+                disconnectGoogleApiClient();
 
                 // call offline endpoint
                 offlineEndpoint();
@@ -417,8 +420,8 @@ public class AvailabilityFragment extends Fragment {
     private void setFirebaseDriverLocation() {
         Log.d(TAG, "setFirebaseDriverLocation - Start");
 
-        DatabaseReference mRef = mDatabase.createChildReference("locations");
-        mRef.child("drivers").child(MainActivity.mdriver.getId()+"").child("lat").setValue(currentLocation.getLatitude());
+        DatabaseReference mRef = firebaseManager.createChildReference("locations");
+        mRef.child("drivers").child(MainActivity.mdriver.getId()+"").child("lat").setValue(currentLocation.getLatitude() + new Random().nextInt()%5);
         mRef.child("drivers").child(MainActivity.mdriver.getId()+"").child("long").setValue(currentLocation.getLongitude());
 
         Log.d(TAG, "setFirebaseDriverLocation - End");
@@ -430,14 +433,8 @@ public class AvailabilityFragment extends Fragment {
         return new LocationListener() {
             @Override
             public void onLocationChanged(Location location) {
-                Log.d(TAG, "onLocationChanged - Start");
-
                 currentLocation = location;
-
-                // Put firebase realtime database with current location
                 setFirebaseDriverLocation();
-
-                Log.d(TAG, "onLocationChanged - End");
             }
         };
     }

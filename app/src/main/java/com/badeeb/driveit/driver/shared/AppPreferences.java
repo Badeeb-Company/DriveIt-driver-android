@@ -37,7 +37,7 @@ public class AppPreferences {
     public static final String TRIP_COMPLETED = "TRIP_COMPLETED";
 
     // Location updates constants
-    public static final int UPDATE_TIME = 3000;    // Millisecoonds
+    public static final int UPDATE_TIME = 0;    // Millisecoonds
     public static final int UPDATE_DISTANCE = 0;
 
     // Splash Screen timeout
