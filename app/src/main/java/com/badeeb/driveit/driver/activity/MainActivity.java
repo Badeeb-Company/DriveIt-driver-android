@@ -96,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             }
             else {
                 msettings.clearUserInfo();
+                AppPreferences.isOnline = false;
                 logout();
                 goToLogin();
             }
