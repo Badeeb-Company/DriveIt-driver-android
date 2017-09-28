@@ -2,18 +2,28 @@ package com.badeeb.driveit.driver.fragment;
 
 
 import android.Manifest;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.graphics.drawable.BitmapDrawable;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -37,6 +47,7 @@ import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.badeeb.driveit.driver.shared.AppSettings;
 import com.badeeb.driveit.driver.shared.FirebaseManager;
+import com.badeeb.driveit.driver.shared.NotificationsManager;
 import com.badeeb.driveit.driver.shared.OnPermissionsGrantedHandler;
 import com.badeeb.driveit.driver.shared.PermissionsChecker;
 import com.badeeb.driveit.driver.shared.UiUtils;
@@ -55,6 +66,7 @@ import org.parceler.Parcels;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -84,6 +96,7 @@ public class AvailabilityFragment extends Fragment {
     private ImageView ivOffline;
     private ImageView ivOnline;
     private LocationListener locationListener;
+    private NotificationsManager notificationsManager;
 
     // Firebase database reference
     private FirebaseManager mDatabase;
@@ -116,6 +129,7 @@ public class AvailabilityFragment extends Fragment {
         ivOnline = view.findViewById(R.id.ivOnline);
         locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         locationListener = createLocationListener();
+        notificationsManager = NotificationsManager.getInstance();
 
         if (AppPreferences.isOnline) {
             setDriverUIOnline();
@@ -310,12 +324,12 @@ public class AvailabilityFragment extends Fragment {
                 mRef.removeEventListener(mtripEventListener);
 
                 // Remove D river from firebase realtime database
-                mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"");
-                mRef.removeValue();
-
-                DatabaseReference locationReference = mDatabase.createChildReference("locations", "drivers",
-                        String.valueOf(MainActivity.mdriver.getId()));
-                locationReference.removeValue();
+//                mRef = mDatabase.createChildReference("drivers", MainActivity.mdriver.getId()+"");
+//                mRef.removeValue();
+//
+//                DatabaseReference locationReference = mDatabase.createChildReference("locations", "drivers",
+//                        String.valueOf(MainActivity.mdriver.getId()));
+//                locationReference.removeValue();
 
                 // Change image to offline
                 setDriverUIOffline();
@@ -440,6 +454,8 @@ public class AvailabilityFragment extends Fragment {
 
                         mrequestDialogFragment.setTargetFragment(AvailabilityFragment.this, DIALOG_RESULT);
                         showDialog();
+
+                        sendNotification();
                     }
                     else {
                         if (mrequestDialogFragment != null && mrequestDialogFragment.isVisible()) {
@@ -459,6 +475,12 @@ public class AvailabilityFragment extends Fragment {
 
             }
         };
+    }
+
+    private void sendNotification() {
+        Intent intent = new Intent(getContext(), MainActivity.class);
+        notificationsManager.createNotification(getContext(), getText(R.string.notification_title_ride).toString(),
+                getText(R.string.notification_msg_ride).toString(), intent, getResources());
     }
 
     @Override

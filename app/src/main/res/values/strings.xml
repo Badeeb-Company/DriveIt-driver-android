@@ -58,5 +58,8 @@
         using the app.</string>
     <string name="ok_btn_dialog">Ok</string>
 
+    <string name="notification_title_ride">Delivery request</string>
+    <string name="notification_msg_ride">Client is waiting for you.</string>
 
+    <string name="logout_error">To logout, You have to complete the current trip</string>
 </resources>

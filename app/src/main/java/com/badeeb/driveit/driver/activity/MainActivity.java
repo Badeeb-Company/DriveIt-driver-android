@@ -30,6 +30,7 @@ import com.badeeb.driveit.driver.model.User;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.badeeb.driveit.driver.shared.AppSettings;
+import com.badeeb.driveit.driver.shared.UiUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -88,9 +89,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (id == R.id.nav_logout) {
             // Handle the logout action
             Log.d(TAG, "onNavigationItemSelected - Logout - Start");
-            msettings.clearUserInfo();
-            logout();
-            goToLogin();
+
+            if (mdriver.getState().equals(AppPreferences.IN_TRIP)) {
+                UiUtils.showDialog(this, R.style.DialogTheme,
+                        R.string.logout_error, R.string.ok_btn_dialog, null);
+            }
+            else {
+                msettings.clearUserInfo();
+                logout();
+                goToLogin();
+            }
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
