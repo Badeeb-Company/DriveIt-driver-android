@@ -149,15 +149,16 @@ public class TripDetailsFragment extends Fragment {
     }
 
     private void tripComplete() {
+//        settings.clearTripInfo();
 
-        String url = AppPreferences.BASE_URL + "/trip/" + mtrip.getId() + "/complete";
+        String url = AppPreferences.BASE_URL + "/trip/" + 330 + "/complete";
 
         Log.d(TAG, "tripComplete - Start");
 
         try {
 
             JsonRequestTrip request = new JsonRequestTrip();
-            request.setTripId(mtrip.getId());
+            request.setTripId(330);
 
             // Create Gson object
             GsonBuilder gsonBuilder = new GsonBuilder();
