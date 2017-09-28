@@ -94,8 +94,7 @@ public class AvailabilityFragment extends Fragment {
 
     // Firebase database reference
     private FirebaseManager firebaseManager;
-    private GoogleApiClient mGoogleApiClient;
-    private LocationListener locationListener;
+    private MainActivity mactivity;
 
     public AvailabilityFragment() {
         // Required empty public constructor
@@ -124,29 +123,26 @@ public class AvailabilityFragment extends Fragment {
         ivOffline = view.findViewById(R.id.ivOffline);
         ivOnline = view.findViewById(R.id.ivOnline);
         locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
-        locationListener = createLocationListener();
         notificationsManager = NotificationsManager.getInstance();
+        mactivity = (MainActivity) getActivity();
 
         if (AppPreferences.isOnline) {
             setDriverUIOnline();
-        }
-        else {
+        } else {
             setDriverUIOffline();
         }
 
         // Refresh menu toolbar
-        ((MainActivity) getActivity()).enbleNavigationView();
+        mactivity.enbleNavigationView();
 
         setupListeners();
 
         onLocationPermissionGrantedHandler = createOnLocationPermissionGrantedHandler();
         locationChangeReceiver = new LocationChangeReceiver();
-        initGoogleApiClient();
 
-        if (((MainActivity) getActivity()).getDriver().getState().equals(AppPreferences.ONLINE)) {
+        if (mactivity.getDriver().getState().equals(AppPreferences.ONLINE)) {
             setDriverOnline();
-        }
-        else if (((MainActivity) getActivity()).getDriver().getState().equals(AppPreferences.TRIP_COMPLETED)) {
+        } else if (mactivity.getDriver().getState().equals(AppPreferences.TRIP_COMPLETED)) {
             setDriverUIOnline();
         }
 
@@ -158,41 +154,13 @@ public class AvailabilityFragment extends Fragment {
         super.onStop();
     }
 
-    private void initGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(getActivity())
-                .addApi(LocationServices.API)
-                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
-                    @Override
-                    public void onConnected(Bundle bundle) {
-                        registerLocationUpdate();
-                    }
-                    @Override
-                    public void onConnectionSuspended(int i) {
-                        Toast.makeText(getActivity(), "API client connection suspended", Toast.LENGTH_LONG).show();
-                    }
-
-                }).addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
-                    @Override
-                    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-                        Toast.makeText(getActivity(), "API client connection failed", Toast.LENGTH_LONG).show();
-                    }
-                })
-                .build();
-    }
-
-    private void disconnectGoogleApiClient(){
-        if(mGoogleApiClient != null && mGoogleApiClient.isConnected()){
-            mGoogleApiClient.disconnect();
-        }
-    }
-
     @SuppressWarnings({"MissingPermission"})
     private OnPermissionsGrantedHandler createOnLocationPermissionGrantedHandler() {
         return new OnPermissionsGrantedHandler() {
             @Override
             public void onPermissionsGranted() {
                 Log.d(TAG, "Location - onPermissionsGranted - Start");
-                if(checkLocationService()) {
+                if (checkLocationService()) {
                     Log.d(TAG, "Location - onPermissionsGranted - Set Driver Online");
                     setDriverOnline();
                 }
@@ -208,8 +176,7 @@ public class AvailabilityFragment extends Fragment {
                 showGPSDisabledWarningDialog();
                 getActivity().registerReceiver(locationChangeReceiver, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
             }
-        }
-        else {
+        } else {
             if (locationDisabledWarningDialog != null && locationDisabledWarningDialog.isShowing()) {
                 locationDisabledWarningDialog.dismiss();
             }
@@ -298,9 +265,9 @@ public class AvailabilityFragment extends Fragment {
             public void onClick(DialogInterface dialogInterface, int i) {
 
                 // Put Driver under firebase realtime database
-                firebaseManager.createChildReference("drivers", ((MainActivity) getActivity()).getDriver().getId()+"", "state").setValue("available");
+                firebaseManager.createChildReference("drivers", mactivity.getDriver().getId() + "", "state").setValue("available");
 
-                DatabaseReference mRef = firebaseManager.createChildReference("drivers", ((MainActivity) getActivity()).getDriver().getId()+"", "trip");
+                DatabaseReference mRef = firebaseManager.createChildReference("drivers", mactivity.getDriver().getId() + "", "trip");
 
                 // Start Listening for Firebase
                 mtripEventListener = createValueEventListener();
@@ -310,13 +277,13 @@ public class AvailabilityFragment extends Fragment {
                 setDriverUIOnline();
 
                 AppPreferences.isOnline = true;
-                ((MainActivity) getActivity()).getDriver().setState(AppPreferences.ONLINE);
+                mactivity.getDriver().setState(AppPreferences.ONLINE);
                 AppSettings appSettings = AppSettings.getInstance();
-                appSettings.saveUser(((MainActivity) getActivity()).getDriver());
+                appSettings.saveUser(mactivity.getDriver());
 
                 // call online endpoint
                 onlineEndpoint();
-                mGoogleApiClient.connect();
+                mactivity.connectGoogleApiClient();
             }
         };
 
@@ -334,16 +301,6 @@ public class AvailabilityFragment extends Fragment {
         Log.d(TAG, "setDriverOnline - End");
     }
 
-    @SuppressWarnings({"MissingPermission"})
-    protected void registerLocationUpdate() {
-        LocationRequest request = LocationRequest.create();
-        request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-        request.setSmallestDisplacement(AppPreferences.UPDATE_DISTANCE);
-        request.setInterval(AppPreferences.UPDATE_TIME);
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, request, locationListener);
-    }
-
-
     private void setDriverOffline() {
         Log.d(TAG, "setDriverOffline - Start");
 
@@ -352,17 +309,17 @@ public class AvailabilityFragment extends Fragment {
             public void onClick(DialogInterface dialogInterface, int i) {
 
                 // Stop listening
-                DatabaseReference mRef = firebaseManager.createChildReference("drivers", ((MainActivity) getActivity()).getDriver().getId()+"", "trip");
+                DatabaseReference mRef = firebaseManager.createChildReference("drivers", mactivity.getDriver().getId() + "", "trip");
                 mRef.removeEventListener(mtripEventListener);
                 // Change image to offline
                 setDriverUIOffline();
 
                 AppPreferences.isOnline = false;
-                ((MainActivity) getActivity()).getDriver().setState(AppPreferences.LOGGED_IN);
+                mactivity.getDriver().setState(AppPreferences.LOGGED_IN);
                 AppSettings appSettings = AppSettings.getInstance();
-                appSettings.saveUser(((MainActivity) getActivity()).getDriver());
+                appSettings.saveUser(mactivity.getDriver());
 
-                disconnectGoogleApiClient();
+                mactivity.disconnectGoogleApiClient();
 
                 // call offline endpoint
                 offlineEndpoint();
@@ -388,8 +345,7 @@ public class AvailabilityFragment extends Fragment {
 
         if (isSuccess) {
             Toast.makeText(getContext(), getString(R.string.ride_rejected_success), Toast.LENGTH_SHORT).show();
-        }
-        else {
+        } else {
             Toast.makeText(getContext(), getString(R.string.ride_rejected_error), Toast.LENGTH_SHORT).show();
         }
 
@@ -401,8 +357,7 @@ public class AvailabilityFragment extends Fragment {
 
         if (isSuccess) {
             Toast.makeText(getContext(), getString(R.string.ride_accepted_success), Toast.LENGTH_SHORT).show();
-        }
-        else {
+        } else {
             Toast.makeText(getContext(), getString(R.string.ride_accepted_error), Toast.LENGTH_SHORT).show();
         }
 
@@ -421,8 +376,8 @@ public class AvailabilityFragment extends Fragment {
         Log.d(TAG, "setFirebaseDriverLocation - Start");
 
         DatabaseReference mRef = firebaseManager.createChildReference("locations");
-        mRef.child("drivers").child(((MainActivity) getActivity()).getDriver().getId()+"").child("lat").setValue(currentLocation.getLatitude() + new Random().nextInt()%5);
-        mRef.child("drivers").child(((MainActivity) getActivity()).getDriver().getId()+"").child("long").setValue(currentLocation.getLongitude());
+        mRef.child("drivers").child(mactivity.getDriver().getId() + "").child("lat").setValue(currentLocation.getLatitude() + new Random().nextInt() % 5);
+        mRef.child("drivers").child(mactivity.getDriver().getId() + "").child("long").setValue(currentLocation.getLongitude());
 
         Log.d(TAG, "setFirebaseDriverLocation - End");
     }
@@ -447,6 +402,7 @@ public class AvailabilityFragment extends Fragment {
 
                 if (dataSnapshot.getValue() != null) {
                     Trip fdbTrip = dataSnapshot.getValue(Trip.class);
+                    System.out.println("TRIP STATUS: " + fdbTrip.getState());
 
                     if (fdbTrip.getState().equals(AppPreferences.TRIP_PENDING)) {
 
@@ -460,13 +416,8 @@ public class AvailabilityFragment extends Fragment {
                         showDialog();
 
                         sendNotification();
-                    }
-                    else {
-                        if (mrequestDialogFragment != null && mrequestDialogFragment.isVisible()) {
-                            // close it
-                            dismissDialog();
-                        }
-
+                    } else {
+                        dismissDialog();
                     }
 
                 }
@@ -497,18 +448,18 @@ public class AvailabilityFragment extends Fragment {
     public void onResume() {
         super.onResume();
         paused = false;
-        if(needsToShowDialog){
+        if (needsToShowDialog) {
             FragmentManager fragmentManager = getFragmentManager();
             mrequestDialogFragment.show(fragmentManager, mrequestDialogFragment.TAG);
             needsToShowDialog = false;
         }
-        if(needsToDismissDialog){
+        if (needsToDismissDialog) {
             mrequestDialogFragment.dismiss();
         }
     }
 
-    private void showDialog(){
-        if(paused){
+    private void showDialog() {
+        if (paused) {
             needsToShowDialog = true;
         } else {
             FragmentManager fragmentManager = getFragmentManager();
@@ -516,10 +467,10 @@ public class AvailabilityFragment extends Fragment {
         }
     }
 
-    private void dismissDialog(){
-        if(paused){
+    private void dismissDialog() {
+        if (paused) {
             needsToDismissDialog = true;
-        } else {
+        } else if (mrequestDialogFragment != null && mrequestDialogFragment.isVisible()) {
             mrequestDialogFragment.dismiss();
         }
     }
@@ -528,7 +479,7 @@ public class AvailabilityFragment extends Fragment {
         @Override
         public void onReceive(Context context, Intent intent) {
             Log.d(TAG, "LocationChangeReceiver - onReceive - Start");
-            if (intent.getAction().equals(LocationManager.PROVIDERS_CHANGED_ACTION)){
+            if (intent.getAction().equals(LocationManager.PROVIDERS_CHANGED_ACTION)) {
                 checkLocationService();
                 getActivity().unregisterReceiver(this);
             }
@@ -554,7 +505,7 @@ public class AvailabilityFragment extends Fragment {
 
             JSONObject jsonObject = new JSONObject(gson.toJson(request));
 
-            Log.d(TAG, "onlineEndpoint - Json Request"+ gson.toJson(request));
+            Log.d(TAG, "onlineEndpoint - Json Request" + gson.toJson(request));
 
             // Call user login service
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, url, jsonObject,
@@ -579,8 +530,7 @@ public class AvailabilityFragment extends Fragment {
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success
 
-                            }
-                            else {
+                            } else {
                                 // Failure
                             }
 
@@ -618,9 +568,9 @@ public class AvailabilityFragment extends Fragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
+                    headers.put("Authorization", "Token token=" + mactivity.getDriver().getToken());
 
-                    Log.d(TAG, "onlineEndpoint - Json Header - "+ "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
+                    Log.d(TAG, "onlineEndpoint - Json Header - " + "Token token=" + mactivity.getDriver().getToken());
                     return headers;
                 }
             };
@@ -655,7 +605,7 @@ public class AvailabilityFragment extends Fragment {
 
             JSONObject jsonObject = new JSONObject(gson.toJson(request));
 
-            Log.d(TAG, "offlineEndpoint - Json Request"+ gson.toJson(request));
+            Log.d(TAG, "offlineEndpoint - Json Request" + gson.toJson(request));
 
             // Call offline service
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, url, jsonObject,
@@ -680,8 +630,7 @@ public class AvailabilityFragment extends Fragment {
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success
 
-                            }
-                            else {
+                            } else {
                                 // Failure
                             }
 
@@ -719,9 +668,9 @@ public class AvailabilityFragment extends Fragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
+                    headers.put("Authorization", "Token token=" + mactivity.getDriver().getToken());
 
-                    Log.d(TAG, "offlineEndpoint - Json Header - "+ "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
+                    Log.d(TAG, "offlineEndpoint - Json Header - " + "Token token=" + mactivity.getDriver().getToken());
 
                     return headers;
                 }

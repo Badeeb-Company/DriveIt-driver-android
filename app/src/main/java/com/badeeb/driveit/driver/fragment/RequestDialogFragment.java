@@ -39,6 +39,8 @@ import org.parceler.Parcels;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.badeeb.driveit.driver.R.id.tvName;
+
 /**
  * A simple {@link Fragment} subclass.
  */
@@ -49,6 +51,7 @@ public class RequestDialogFragment extends DialogFragment {
 
     // Class Attributes
     private Trip mtrip;
+    private MainActivity mactivity;
 
     public RequestDialogFragment() {
         // Required empty public constructor
@@ -73,6 +76,7 @@ public class RequestDialogFragment extends DialogFragment {
 
         // Initialize Attributes
         this.mtrip = Parcels.unwrap(getArguments().getParcelable("trip"));
+        mactivity = (MainActivity) getActivity();
 
         // Publish values into dialog
         TextView tvName = view.findViewById(R.id.tvName);
@@ -101,11 +105,7 @@ public class RequestDialogFragment extends DialogFragment {
         bAccept.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "setupListeners - bAccept_onClick - Start");
-
                 acceptRide();
-
-                Log.d(TAG, "setupListeners - bAccept_onClick - End");
             }
         });
 
@@ -113,11 +113,7 @@ public class RequestDialogFragment extends DialogFragment {
         bReject.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "setupListeners - bReject_onClick - Start");
-
                 rejectRide();
-
-                Log.d(TAG, "setupListeners - bReject_onClick - End");
             }
         });
 
@@ -170,10 +166,10 @@ public class RequestDialogFragment extends DialogFragment {
                                 // Success Ride Acceptance
                                 availabilityFragment.showRideAcceptMessage(true);
 
-                                ((MainActivity) getActivity()).getDriver().setState(AppPreferences.IN_TRIP);
+                                mactivity.getDriver().setState(AppPreferences.IN_TRIP);
 
                                 AppSettings settings = AppSettings.getInstance();
-                                settings.saveUser(((MainActivity) getActivity()).getDriver());
+                                settings.saveUser(mactivity.getDriver());
                                 settings.saveTrip(mtrip);
 
                                 gotToTripDetailsFragment(availabilityFragment.getFragmentManager());
@@ -221,7 +217,7 @@ public class RequestDialogFragment extends DialogFragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
+                    headers.put("Authorization", "Token token=" + mactivity.getDriver().getToken());
                     return headers;
                 }
             };
@@ -327,7 +323,7 @@ public class RequestDialogFragment extends DialogFragment {
                     HashMap<String, String> headers = new HashMap<String, String>();
                     headers.put("Content-Type", "application/json; charset=utf-8");
                     headers.put("Accept", "*");
-                    headers.put("Authorization", "Token token=" + ((MainActivity) getActivity()).getDriver().getToken());
+                    headers.put("Authorization", "Token token=" + mactivity.getDriver().getToken());
                     return headers;
                 }
             };
@@ -350,8 +346,9 @@ public class RequestDialogFragment extends DialogFragment {
     @Override
     public void onResume() {
         super.onResume();
-
-        getDialog().getWindow().setBackgroundDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.rounded_corner_white));
+        if(getDialog() != null) {
+            getDialog().getWindow().setBackgroundDrawable(ContextCompat.getDrawable(getActivity(), R.drawable.rounded_corner_white));
+        }
     }
 
     private void gotToTripDetailsFragment(FragmentManager fragmentManager) {

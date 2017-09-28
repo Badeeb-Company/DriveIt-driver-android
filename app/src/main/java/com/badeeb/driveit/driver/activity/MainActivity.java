@@ -1,6 +1,8 @@
 package com.badeeb.driveit.driver.activity;
 
+import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
@@ -30,7 +32,14 @@ import com.badeeb.driveit.driver.model.User;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.badeeb.driveit.driver.shared.AppSettings;
+import com.badeeb.driveit.driver.shared.FirebaseManager;
 import com.badeeb.driveit.driver.shared.UiUtils;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
+import com.google.firebase.database.DatabaseReference;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -39,6 +48,7 @@ import org.parceler.Parcels;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
@@ -54,6 +64,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private AppSettings msettings;
 
     private User mdriver;
+    private GoogleApiClient mGoogleApiClient;
+    private LocationListener locationListener;
+    private FirebaseManager firebaseManager;
+    private Location currentLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -97,6 +111,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             else {
                 msettings.clearUserInfo();
                 AppPreferences.isOnline = false;
+                disconnectGoogleApiClient();
                 logout();
                 goToLogin();
             }
@@ -116,6 +131,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Initialize Attributes
         mFragmentManager = getSupportFragmentManager();
         msettings = AppSettings.getInstance();
+        locationListener = createLocationListener();
+        firebaseManager = new FirebaseManager();
+        initGoogleApiClient();
+
 
         // Toolbar
         mtoolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -138,6 +157,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             if (mdriver.getState().equals(AppPreferences.IN_TRIP)) {
                 // Go to trip details fragment
                 gotToTripDetailsFragment();
+                connectGoogleApiClient();
             }
             else if (mdriver.getState().equals(AppPreferences.ONLINE)) {
                 // Go to Availability fragment
@@ -153,6 +173,57 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
 
         Log.d(TAG, "init - End");
+    }
+
+    private void initGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
+                    @Override
+                    public void onConnected(Bundle bundle) {
+                        registerLocationUpdate();
+                    }
+                    @Override
+                    public void onConnectionSuspended(int i) {
+                        Toast.makeText(MainActivity.this, "API client connection suspended", Toast.LENGTH_LONG).show();
+                    }
+
+                }).addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
+                    @Override
+                    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+                        Toast.makeText(MainActivity.this, "API client connection failed", Toast.LENGTH_LONG).show();
+                    }
+                })
+                .build();
+    }
+
+    private LocationListener createLocationListener() {
+        return new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                currentLocation = location;
+                setFirebaseDriverLocation();
+            }
+        };
+    }
+
+    private void setFirebaseDriverLocation() {
+        Log.d(TAG, "setFirebaseDriverLocation - Start");
+
+        DatabaseReference mRef = firebaseManager.createChildReference("locations");
+        mRef.child("drivers").child(mdriver.getId()+"").child("lat").setValue(currentLocation.getLatitude() + new Random().nextInt()%5 * 0.0000001);
+        mRef.child("drivers").child(mdriver.getId()+"").child("long").setValue(currentLocation.getLongitude());
+
+        Log.d(TAG, "setFirebaseDriverLocation - End");
+    }
+
+    @SuppressWarnings({"MissingPermission"})
+    protected void registerLocationUpdate() {
+        LocationRequest request = LocationRequest.create();
+        request.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+        request.setSmallestDisplacement(AppPreferences.UPDATE_DISTANCE);
+        request.setInterval(AppPreferences.UPDATE_TIME);
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, request, locationListener);
     }
 
     private void gotToTripDetailsFragment() {
@@ -300,4 +371,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Log.d(TAG, "logout - End");
     }
 
+    public void connectGoogleApiClient() {
+        if(mGoogleApiClient != null && !mGoogleApiClient.isConnected()){
+            mGoogleApiClient.connect();
+        }
+    }
+
+    public void disconnectGoogleApiClient(){
+        if(mGoogleApiClient != null && mGoogleApiClient.isConnected()){
+            mGoogleApiClient.disconnect();
+        }
+    }
 }
