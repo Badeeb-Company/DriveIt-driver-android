@@ -149,16 +149,14 @@ public class TripDetailsFragment extends Fragment {
     }
 
     private void tripComplete() {
-//        settings.clearTripInfo();
-
-        String url = AppPreferences.BASE_URL + "/trip/" + 330 + "/complete";
+        String url = AppPreferences.BASE_URL + "/trip/" + mtrip.getId() + "/complete";
 
         Log.d(TAG, "tripComplete - Start");
 
         try {
 
             JsonRequestTrip request = new JsonRequestTrip();
-            request.setTripId(330);
+            request.setTripId(mtrip.getId());
 
             // Create Gson object
             GsonBuilder gsonBuilder = new GsonBuilder();
@@ -193,6 +191,7 @@ public class TripDetailsFragment extends Fragment {
                                 // Success tripComplete
 
                                 MainActivity.mdriver.setState(AppPreferences.TRIP_COMPLETED);
+                                settings.saveUser(MainActivity.mdriver);
                                 settings.clearTripInfo();
 
                                 goToAvailabilityFragment();
