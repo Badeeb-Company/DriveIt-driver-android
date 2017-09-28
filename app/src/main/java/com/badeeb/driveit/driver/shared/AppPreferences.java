@@ -27,14 +27,14 @@ public class AppPreferences {
     public static final int VOLLEY_RETRY_COUNTER = 2;
 
     // Trip constants
-    public static boolean isOnline = false;
     public static final String TRIP_PENDING = "PENDING";
 
-    // Driver status
-    public static final String LOGGED_IN = "LOGGED_IN";
-    public static final String ONLINE = "ONLINE";
-    public static final String IN_TRIP = "IN_TRIP";
-    public static final String TRIP_COMPLETED = "TRIP_COMPLETED";
+    public static final String USER_ONLINE = "0";
+    public static final String USER_OFFLINE = "1";
+
+    public static final String USER_AVAILABLE = "0";
+    public static final String USER_IN_TRIP = "1";
+    public static final String USER_INVITED = "2";
 
     // Location updates constants
     public static final int UPDATE_TIME = 0;    // Millisecoonds

@@ -208,8 +208,6 @@ public class LoginFragment extends Fragment {
                                 // Move to next screen --> Main Activity
                                 mdriver = jsonResponse.getUser();
 
-                                mdriver.setState(AppPreferences.LOGGED_IN);
-
                                 AppSettings settings = AppSettings.getInstance();
                                 settings.saveUser(mdriver);
 

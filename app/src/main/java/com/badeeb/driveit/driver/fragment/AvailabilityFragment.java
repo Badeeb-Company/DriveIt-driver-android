@@ -12,6 +12,7 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
@@ -63,6 +64,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
+
 /**
  * A simple {@link Fragment} subclass.
  */
@@ -83,14 +85,14 @@ public class AvailabilityFragment extends Fragment {
     private RequestDialogFragment mrequestDialogFragment;
     private ValueEventListener mtripEventListener;
     private boolean paused;
-    private boolean needsToShowDialog;
-    private boolean needsToDismissDialog;
+    private InvitationStatus invitationStatus;
     private OnPermissionsGrantedHandler onLocationPermissionGrantedHandler;
     private AlertDialog locationDisabledWarningDialog;
     private LocationChangeReceiver locationChangeReceiver;
     private ImageView ivOffline;
     private ImageView ivOnline;
     private NotificationsManager notificationsManager;
+    DatabaseReference mRefTrip;
 
     // Firebase database reference
     private FirebaseManager firebaseManager;
@@ -100,6 +102,10 @@ public class AvailabilityFragment extends Fragment {
         // Required empty public constructor
     }
 
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -125,8 +131,10 @@ public class AvailabilityFragment extends Fragment {
         locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         notificationsManager = NotificationsManager.getInstance();
         mactivity = (MainActivity) getActivity();
+        mRefTrip = firebaseManager.createChildReference("drivers", mactivity.getDriver().getId() + "", "trip");
+        invitationStatus = InvitationStatus.NONE;
 
-        if (AppPreferences.isOnline) {
+        if (mactivity.getDriver().isOnline()) {
             setDriverUIOnline();
         } else {
             setDriverUIOffline();
@@ -140,10 +148,8 @@ public class AvailabilityFragment extends Fragment {
         onLocationPermissionGrantedHandler = createOnLocationPermissionGrantedHandler();
         locationChangeReceiver = new LocationChangeReceiver();
 
-        if (mactivity.getDriver().getState().equals(AppPreferences.ONLINE)) {
+        if (mactivity.getDriver().isOnline()) {
             setDriverOnline();
-        } else if (mactivity.getDriver().getState().equals(AppPreferences.TRIP_COMPLETED)) {
-            setDriverUIOnline();
         }
 
         Log.d(TAG, "init - End");
@@ -263,21 +269,14 @@ public class AvailabilityFragment extends Fragment {
         DialogInterface.OnClickListener positiveListener = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-
-                // Put Driver under firebase realtime database
-                firebaseManager.createChildReference("drivers", mactivity.getDriver().getId() + "", "state").setValue("available");
-
-                DatabaseReference mRef = firebaseManager.createChildReference("drivers", mactivity.getDriver().getId() + "", "trip");
-
                 // Start Listening for Firebase
                 mtripEventListener = createValueEventListener();
-                mRef.addValueEventListener(mtripEventListener);
+                mRefTrip.addValueEventListener(mtripEventListener);
 
                 // Change image to offline
                 setDriverUIOnline();
 
-                AppPreferences.isOnline = true;
-                mactivity.getDriver().setState(AppPreferences.ONLINE);
+                mactivity.getDriver().setOnline();
                 AppSettings appSettings = AppSettings.getInstance();
                 appSettings.saveUser(mactivity.getDriver());
 
@@ -309,13 +308,12 @@ public class AvailabilityFragment extends Fragment {
             public void onClick(DialogInterface dialogInterface, int i) {
 
                 // Stop listening
-                DatabaseReference mRef = firebaseManager.createChildReference("drivers", mactivity.getDriver().getId() + "", "trip");
-                mRef.removeEventListener(mtripEventListener);
+                removeFirebaseListener();
+
                 // Change image to offline
                 setDriverUIOffline();
 
-                AppPreferences.isOnline = false;
-                mactivity.getDriver().setState(AppPreferences.LOGGED_IN);
+                mactivity.getDriver().setOffline();
                 AppSettings appSettings = AppSettings.getInstance();
                 appSettings.saveUser(mactivity.getDriver());
 
@@ -338,6 +336,10 @@ public class AvailabilityFragment extends Fragment {
 
 
         Log.d(TAG, "setDriverOffline - End");
+    }
+
+    public void removeFirebaseListener(){
+        mRefTrip.removeEventListener(mtripEventListener);
     }
 
     public void showRideRejectMessage(boolean isSuccess) {
@@ -448,19 +450,23 @@ public class AvailabilityFragment extends Fragment {
     public void onResume() {
         super.onResume();
         paused = false;
-        if (needsToShowDialog) {
-            FragmentManager fragmentManager = getFragmentManager();
-            mrequestDialogFragment.show(fragmentManager, mrequestDialogFragment.TAG);
-            needsToShowDialog = false;
+        switch (invitationStatus){
+            case AVAILABLE:
+                FragmentManager fragmentManager = getFragmentManager();
+                mrequestDialogFragment.show(fragmentManager, mrequestDialogFragment.TAG);
+                break;
+            case CANCELLED:
+                if(mrequestDialogFragment != null && mrequestDialogFragment.isVisible()){
+                    mrequestDialogFragment.dismiss();
+                }
+                break;
         }
-        if (needsToDismissDialog) {
-            mrequestDialogFragment.dismiss();
-        }
+        invitationStatus = InvitationStatus.NONE;
     }
 
     private void showDialog() {
         if (paused) {
-            needsToShowDialog = true;
+            invitationStatus = InvitationStatus.AVAILABLE;
         } else {
             FragmentManager fragmentManager = getFragmentManager();
             mrequestDialogFragment.show(fragmentManager, mrequestDialogFragment.TAG);
@@ -469,7 +475,7 @@ public class AvailabilityFragment extends Fragment {
 
     private void dismissDialog() {
         if (paused) {
-            needsToDismissDialog = true;
+            invitationStatus = InvitationStatus.CANCELLED;
         } else if (mrequestDialogFragment != null && mrequestDialogFragment.isVisible()) {
             mrequestDialogFragment.dismiss();
         }
@@ -687,5 +693,7 @@ public class AvailabilityFragment extends Fragment {
 
         Log.d(TAG, "offlineEndpoint - End");
     }
+
+    private enum InvitationStatus {NONE, AVAILABLE, CANCELLED}
 
 }

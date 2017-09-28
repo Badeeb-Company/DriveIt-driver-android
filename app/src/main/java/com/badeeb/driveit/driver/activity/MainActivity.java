@@ -81,50 +81,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Log.d(TAG, "onCreate - End");
     }
 
-    @Override
-    public void onBackPressed() {
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        if (drawer.isDrawerOpen(GravityCompat.START)) {
-            drawer.closeDrawer(GravityCompat.START);
-        } else {
-            super.onBackPressed();
-        }
-    }
-
-    @SuppressWarnings("StatementWithEmptyBody")
-    @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-
-        Log.d(TAG, "onNavigationItemSelected - Start");
-
-        // Handle navigation view item clicks here.
-        int id = item.getItemId();
-
-        if (id == R.id.nav_logout) {
-            // Handle the logout action
-            Log.d(TAG, "onNavigationItemSelected - Logout - Start");
-
-            if (mdriver.getState().equals(AppPreferences.IN_TRIP)) {
-                UiUtils.showDialog(this, R.style.DialogTheme,
-                        R.string.logout_error, R.string.ok_btn_dialog, null);
-            }
-            else {
-                msettings.clearUserInfo();
-                AppPreferences.isOnline = false;
-                disconnectGoogleApiClient();
-                logout();
-                goToLogin();
-            }
-        }
-
-        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
-        drawer.closeDrawer(GravityCompat.START);
-
-        Log.d(TAG, "onNavigationItemSelected - End");
-
-        return true;
-    }
-
     private void init() {
         Log.d(TAG, "init - Start");
 
@@ -153,21 +109,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Load Login Fragment inside Main activity
         if(msettings.isLoggedIn()){
             mdriver = msettings.getUser();
-
-            if (mdriver.getState().equals(AppPreferences.IN_TRIP)) {
-                // Go to trip details fragment
-                gotToTripDetailsFragment();
+            if(mdriver.isOnline()){
                 connectGoogleApiClient();
-            }
-            else if (mdriver.getState().equals(AppPreferences.ONLINE)) {
-                // Go to Availability fragment
+                if(mdriver.isInTrip()){
+                    gotToTripDetailsFragment();
+                } else {
+                    goToAvialabilityFragment();
+                }
+            } else {
                 goToAvialabilityFragment();
             }
-            else {
-                // Go to Availability fragment
-                goToAvialabilityFragment();
-            }
-
         } else {
             goToLogin();
         }
@@ -224,6 +175,50 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         request.setSmallestDisplacement(AppPreferences.UPDATE_DISTANCE);
         request.setInterval(AppPreferences.UPDATE_TIME);
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, request, locationListener);
+    }
+
+    @Override
+    public void onBackPressed() {
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        if (drawer.isDrawerOpen(GravityCompat.START)) {
+            drawer.closeDrawer(GravityCompat.START);
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @SuppressWarnings("StatementWithEmptyBody")
+    @Override
+    public boolean onNavigationItemSelected(MenuItem item) {
+
+        Log.d(TAG, "onNavigationItemSelected - Start");
+
+        // Handle navigation view item clicks here.
+        int id = item.getItemId();
+
+        if (id == R.id.nav_logout) {
+            // Handle the logout action
+            Log.d(TAG, "onNavigationItemSelected - Logout - Start");
+
+            if (mdriver.isInTrip()) {
+                UiUtils.showDialog(this, R.style.DialogTheme,
+                        R.string.logout_error, R.string.ok_btn_dialog, null);
+            }
+            else {
+                msettings.clearUserInfo();
+                disconnectGoogleApiClient();
+                // TODO remove trip listener
+                logout();
+                goToLogin();
+            }
+        }
+
+        DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
+        drawer.closeDrawer(GravityCompat.START);
+
+        Log.d(TAG, "onNavigationItemSelected - End");
+
+        return true;
     }
 
     private void gotToTripDetailsFragment() {

@@ -1,5 +1,6 @@
 package com.badeeb.driveit.driver.model;
 
+import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
@@ -41,6 +42,10 @@ public class User {
     @Expose
     @SerializedName("driver_state")
     private String state;
+
+    @Expose
+    @SerializedName("driver_availability")
+    private String availability;
     @Expose
     @SerializedName("token")
     private String token;
@@ -53,6 +58,34 @@ public class User {
         this.password = "";
         this.photoUrl = "";
         this.phoneNumber = "";
+    }
+
+    public boolean isOnline(){
+        return AppPreferences.USER_ONLINE.equals(availability);
+    }
+
+    public void setOnline(){
+        availability = AppPreferences.USER_ONLINE;
+    }
+
+    public void setOffline(){
+        availability = AppPreferences.USER_OFFLINE;
+    }
+
+    public boolean isInTrip(){
+        return AppPreferences.USER_IN_TRIP .equals(state);
+    }
+
+    public void setInTrip(){
+        state = AppPreferences.USER_IN_TRIP;
+    }
+
+    public boolean isAvailable(){
+        return AppPreferences.USER_AVAILABLE.equals(state);
+    }
+
+    public void setAvailable(){
+        state = AppPreferences.USER_AVAILABLE;
     }
 
     // Setters and Getters
@@ -126,6 +159,14 @@ public class User {
 
     public void setState(String state) {
         this.state = state;
+    }
+
+    public String getAvailability() {
+        return availability;
+    }
+
+    public void setAvailability(String availability) {
+        this.availability = availability;
     }
 
     public String getToken() {

@@ -190,7 +190,7 @@ public class TripDetailsFragment extends Fragment {
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success tripComplete
 
-                                ((MainActivity) getActivity()).getDriver().setState(AppPreferences.TRIP_COMPLETED);
+                                ((MainActivity) getActivity()).getDriver().setAvailable();
                                 settings.saveUser(((MainActivity) getActivity()).getDriver());
                                 settings.clearTripInfo();
 

@@ -26,6 +26,7 @@ public class AppSettings {
     private final static String PREF_USER_TOKEN = "PREF_USER_TOKEN";
     private final static String PREF_USER_IMAGE_URL = "PREF_USER_IMAGE_URL";
     private final static String PREF_USER_STATE = "PREF_USER_STATE";
+    private final static String PREF_USER_AVAILABILITY = "PREF_USER_AVAILABILITY";
 
     private final static String PREF_TRIP_ID = "PREF_TRIP_ID";
     private final static String PREF_TRIP_DISTANCE_TO_ARRIVE = "PREF_TRIP_DISTANCE_TO_ARRIVE";
@@ -88,6 +89,7 @@ public class AppSettings {
         user.setPhotoUrl(getUserImageUrl());
         user.setToken(getUserToken());
         user.setState(getUserState());
+        user.setAvailability(getUserAvailability());
         return user;
     }
 
@@ -99,6 +101,7 @@ public class AppSettings {
         setUserImageUrl(user.getPhotoUrl());
         setUserToken(user.getToken());
         setUserState(user.getState());
+        setUserAvailability(user.getAvailability());
     }
 
     public void clearUserInfo() {
@@ -109,7 +112,8 @@ public class AppSettings {
                 .remove(PREF_USER_TOKEN)
                 .remove(PREF_USER_NAME)
                 .remove(PREF_USER_MOBILE_NUMBER)
-                .remove(PREF_USER_STATE);
+                .remove(PREF_USER_STATE)
+                .remove(PREF_USER_AVAILABILITY);
         editor.commit();
     }
 
@@ -191,6 +195,10 @@ public class AppSettings {
         putValue(PREF_USER_STATE, userStatus);
     }
 
+    public void setUserAvailability(String userAvailability){
+        putValue(PREF_USER_AVAILABILITY, userAvailability);
+    }
+
     public int getUserId() {
         return getValue(PREF_USER_ID, 0);
     }
@@ -217,6 +225,10 @@ public class AppSettings {
 
     public String getUserState() {
         return getValue(PREF_USER_STATE, "");
+    }
+
+    public String getUserAvailability() {
+        return getValue(PREF_USER_AVAILABILITY, "");
     }
 
     public void setTripId(int prefTripId) {

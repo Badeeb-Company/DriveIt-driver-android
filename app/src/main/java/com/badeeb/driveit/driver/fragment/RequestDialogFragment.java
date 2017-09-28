@@ -52,6 +52,7 @@ public class RequestDialogFragment extends DialogFragment {
     // Class Attributes
     private Trip mtrip;
     private MainActivity mactivity;
+    private FragmentManager fragmentManager;
 
     public RequestDialogFragment() {
         // Required empty public constructor
@@ -77,6 +78,7 @@ public class RequestDialogFragment extends DialogFragment {
         // Initialize Attributes
         this.mtrip = Parcels.unwrap(getArguments().getParcelable("trip"));
         mactivity = (MainActivity) getActivity();
+        fragmentManager = getFragmentManager();
 
         // Publish values into dialog
         TextView tvName = view.findViewById(R.id.tvName);
@@ -165,14 +167,15 @@ public class RequestDialogFragment extends DialogFragment {
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success Ride Acceptance
                                 availabilityFragment.showRideAcceptMessage(true);
+                                availabilityFragment.removeFirebaseListener();
 
-                                mactivity.getDriver().setState(AppPreferences.IN_TRIP);
+                                mactivity.getDriver().setInTrip();
 
                                 AppSettings settings = AppSettings.getInstance();
                                 settings.saveUser(mactivity.getDriver());
                                 settings.saveTrip(mtrip);
 
-                                gotToTripDetailsFragment(availabilityFragment.getFragmentManager());
+                                gotToTripDetailsFragment();
 
                             } else {
                                 // Invalid Ride Acceptance
@@ -351,7 +354,7 @@ public class RequestDialogFragment extends DialogFragment {
         }
     }
 
-    private void gotToTripDetailsFragment(FragmentManager fragmentManager) {
+    private void gotToTripDetailsFragment() {
         TripDetailsFragment tripDetailsFragment = new TripDetailsFragment();
         Bundle bundle = new Bundle();
         bundle.putParcelable("trip", Parcels.wrap(mtrip));

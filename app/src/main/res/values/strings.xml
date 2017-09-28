@@ -29,7 +29,7 @@
 
     <string name="offline_msg">Are you sure to be offline?</string>
     <string name="offline_des_msg">You won\'t be available to receive delivery requests.</string>
-    <string name="online_msg">Are you sure to be online?</string>
+    <string name="online_msg">Are you sure to continue online?</string>
     <string name="online_des_msg">You will be available to receive delivery requests.</string>
     <string name="dialog_msg">Are you sure?</string>
     <string name="yes_msg">Yes</string>
