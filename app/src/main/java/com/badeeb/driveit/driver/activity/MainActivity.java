@@ -13,6 +13,8 @@ import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -34,6 +36,7 @@ import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.badeeb.driveit.driver.shared.AppSettings;
 import com.badeeb.driveit.driver.shared.FirebaseManager;
 import com.badeeb.driveit.driver.shared.UiUtils;
+import com.bumptech.glide.Glide;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
@@ -42,6 +45,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.firebase.database.DatabaseReference;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.makeramen.roundedimageview.RoundedImageView;
 
 import org.json.JSONObject;
 import org.parceler.Parcels;
@@ -109,6 +113,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // Load Login Fragment inside Main activity
         if(msettings.isLoggedIn()){
             mdriver = msettings.getUser();
+            setNavigationViewValues(mdriver);
             if(mdriver.isOnline()){
                 connectGoogleApiClient();
                 if(mdriver.isInTrip()){
@@ -124,6 +129,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
 
         Log.d(TAG, "init - End");
+    }
+
+    public void setNavigationViewValues(User client){
+        View view = mnavigationView.getHeaderView(0);
+        RoundedImageView profilePhoto = (RoundedImageView) view.findViewById(R.id.rivProfilePhoto);
+        TextView tvProfileName = (TextView) view.findViewById(R.id.tv_profile_name);
+        TextView tvProfileEmail = (TextView) view.findViewById(R.id.tv_profile_email);
+        tvProfileName.setText(client.getName());
+        tvProfileEmail.setText(client.getEmail());
+        Glide.with(this)
+                .load(client.getPhotoUrl())
+                .into(profilePhoto);
     }
 
     private void initGoogleApiClient() {

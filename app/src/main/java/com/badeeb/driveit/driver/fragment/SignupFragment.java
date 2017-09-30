@@ -1,8 +1,13 @@
 package com.badeeb.driveit.driver.fragment;
 
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
@@ -28,7 +33,16 @@ import com.badeeb.driveit.driver.model.JsonSignUp;
 import com.badeeb.driveit.driver.model.User;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
+import com.badeeb.driveit.driver.shared.OnPermissionsGrantedHandler;
+import com.badeeb.driveit.driver.shared.PermissionsChecker;
 import com.badeeb.driveit.driver.shared.UiUtils;
+import com.badeeb.driveit.driver.shared.Utils;
+import com.bumptech.glide.Glide;
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.storage.FirebaseStorage;
+import com.google.firebase.storage.StorageReference;
+import com.google.firebase.storage.UploadTask;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.makeramen.roundedimageview.RoundedImageView;
@@ -36,8 +50,11 @@ import com.makeramen.roundedimageview.RoundedImageView;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.FileNotFoundException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * A simple {@link Fragment} subclass.
@@ -46,23 +63,29 @@ public class SignupFragment extends Fragment {
 
     // Logging Purpose
     public static final String TAG = SignupFragment.class.getSimpleName();
+    private static final int PERM_LOCATION_RQST_CODE = 200;
+    private static final int IMAGE_GALLERY_REQUEST = 10;
 
-    // Class Attributes
+    private FirebaseStorage storage = FirebaseStorage.getInstance();
+
+    private Button bSelectPhoto;
     private EditText name;
     private EditText email;
     private EditText password;
     private EditText phone;
-    private RoundedImageView profileImage;
+    private RoundedImageView rivProfilePhoto;
 
     private ProgressDialog progressDialog;
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/driver";
 
     private User mdriver;
+    private MainActivity mactivity;
+    private Uri photoUri;
+    private String uploadedPhotoUrl;
+    private boolean photoChosen;
 
-    //
-    private static final int PERMISSION_READ_STORAGE = 145;
-    private static final int IMAGE_GALLERY_REQUEST = 10;
+    private OnPermissionsGrantedHandler onStoragePermissionGrantedHandler;
 
     public SignupFragment() {
         // Required empty public constructor
@@ -88,14 +111,16 @@ public class SignupFragment extends Fragment {
 
         // Attributes initialization
         mdriver = new User();
+        mactivity = (MainActivity) getActivity();
+        onStoragePermissionGrantedHandler = createOnStoragePermissionGrantedHandler();
 
-		progressDialog = UiUtils.createProgressDialog(getActivity(), R.style.DialogTheme);
-
+		progressDialog = UiUtils.createProgressDialog(getActivity(), "Signing up...", R.style.DialogTheme);
+        bSelectPhoto = (Button) view.findViewById(R.id.bSelectPhoto);
         name = (EditText) view.findViewById(R.id.name);
         email = (EditText) view.findViewById(R.id.email);
         password = (EditText) view.findViewById(R.id.password);
         phone = (EditText) view.findViewById(R.id.phone);
-        profileImage = (RoundedImageView) view.findViewById(R.id.profile_image);
+        rivProfilePhoto = (RoundedImageView) view.findViewById(R.id.rivProfilePhoto);
 
         // Setup listeners
         setupListeners(view);
@@ -115,49 +140,121 @@ public class SignupFragment extends Fragment {
         signUpBttn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View cview) {
-                Log.d(TAG, "setupListeners - signUpBttn_onClick - Start");
+                if (! validateInput()) {
+                    return;
+                }
 
-                // Enable Progress bar
-                progressDialog.show();
+                if (photoUri == null) {
+                    Toast.makeText(mactivity, "Please select profile photo to continue", Toast.LENGTH_SHORT).show();
+                    return;
+                }
 
-                mdriver.setName(name.getText().toString());
-                mdriver.setEmail(email.getText().toString());
-                mdriver.setPassword(password.getText().toString());
-                mdriver.setPhotoUrl("http://solarviews.com/raw/earth/earthafr.jpg"); // to be changed
-                mdriver.setPhoneNumber(phone.getText().toString());
-
-                // Check signup using network call
-                signup();
-
-                Log.d(TAG, "setupListeners - signUpBttn_onClick - End");
+                if (photoChosen) {
+                    if(Utils.isAllowedFileSize(mactivity, photoUri)) {
+                        uploadToFirebase();
+                    }
+                } else {
+                    callSignup();
+                }
             }
         });
 
-        // Profile Image listener
-        RoundedImageView profileImage = (RoundedImageView) view.findViewById(R.id.profile_image);
-
-        profileImage.setOnClickListener(new View.OnClickListener() {
+        bSelectPhoto.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.d(TAG, "setupListeners - profileImage_onClick - Start");
-
-//                askForReadStoragePermission();
-
-                Log.d(TAG, "setupListeners - profileImage_onClick - End");
+                PermissionsChecker.checkPermissions(SignupFragment.this, onStoragePermissionGrantedHandler,
+                        PERM_LOCATION_RQST_CODE, Manifest.permission.READ_EXTERNAL_STORAGE);
             }
         });
 
         Log.d(TAG, "setupListeners - End");
     }
 
-    private void signup() {
-        Log.d(TAG, "signup - Start");
-
-        if (! validateInput()) {
-            // Disable Progress bar
-            progressDialog.dismiss();
-            return;
+    private void uploadToFirebase() {
+        InputStream inputStream = null;
+        try {
+            inputStream = mactivity.getContentResolver().openInputStream(photoUri);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
         }
+        byte[] inputData = Utils.getBytes(inputStream);
+
+        StorageReference storageRef = storage.getReference();
+        StorageReference imageReference = storageRef.child("clients/" + UUID.randomUUID());
+        final ProgressDialog uploadPhotoProgressDialog = UiUtils.createProgressDialog(mactivity, "Uploading photo...",
+                R.style.DialogTheme);
+
+        uploadPhotoProgressDialog.show();
+
+        UploadTask uploadTask = imageReference.putBytes(inputData);
+        uploadTask.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                Toast.makeText(mactivity, "Cannot upload photo, please choose another one.", Toast.LENGTH_LONG).show();
+                uploadPhotoProgressDialog.dismiss();
+            }
+        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                Uri downloadUrl = taskSnapshot.getDownloadUrl();
+                uploadedPhotoUrl = downloadUrl.toString();
+                uploadPhotoProgressDialog.dismiss();
+                photoChosen = false;
+                callSignup();
+            }
+        });
+    }
+
+    private OnPermissionsGrantedHandler createOnStoragePermissionGrantedHandler() {
+        return new OnPermissionsGrantedHandler() {
+            @Override
+            public void onPermissionsGranted() {
+                openSelectPhotoScreen();
+            }
+        };
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case PERM_LOCATION_RQST_CODE: {
+                if (PermissionsChecker.permissionsGranted(grantResults)) {
+                    onStoragePermissionGrantedHandler.onPermissionsGranted();
+                }
+            }
+        }
+    }
+
+    private void openSelectPhotoScreen() {
+        Intent intent = new Intent();
+        intent.setType("image/*");
+        intent.setAction(Intent.ACTION_GET_CONTENT);
+        startActivityForResult(Intent.createChooser(intent, "Select Photo"), IMAGE_GALLERY_REQUEST);
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == IMAGE_GALLERY_REQUEST && resultCode == Activity.RESULT_OK) {
+            if (data == null) {
+                Toast.makeText(mactivity, "Cannot select this photo, please choose another one", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            photoChosen = true;
+            photoUri = data.getData();
+            Glide.with(mactivity)
+                    .load(photoUri)
+                    .into(rivProfilePhoto);
+        }
+    }
+
+    private void callSignup() {
+        progressDialog.show();
+        mdriver.setName(name.getText().toString());
+        mdriver.setEmail(email.getText().toString());
+        mdriver.setPassword(password.getText().toString());
+        mdriver.setPhotoUrl(uploadedPhotoUrl);
+        mdriver.setPhoneNumber(phone.getText().toString());
 
         try {
 

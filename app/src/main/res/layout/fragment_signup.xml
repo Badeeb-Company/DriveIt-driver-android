@@ -25,7 +25,7 @@
             android:orientation="vertical">
 
             <com.makeramen.roundedimageview.RoundedImageView
-                android:id="@+id/profile_image"
+                android:id="@+id/rivProfilePhoto"
                 android:layout_width="100dp"
                 android:layout_height="100dp"
                 android:layout_gravity="center"
@@ -33,6 +33,15 @@
                 android:scaleType="centerCrop"
                 android:src="@drawable/def_usr_img"
                 app:riv_oval="true" />
+            <Button
+                android:id="@+id/bSelectPhoto"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Select Photo"
+                android:textColor="@color/aluminum"
+                android:padding="8dp"
+                android:background="@drawable/rounded_corner_white"/>
 
             <!-- name -->
             <android.support.design.widget.TextInputLayout

@@ -91,7 +91,6 @@ public class TripDetailsFragment extends Fragment {
 
         Glide.with(getContext())
                 .load(mtrip.getClient_image_url())
-                .placeholder(R.drawable.def_usr_img)
                 .into(driverPhoto);
 
         tDriverName.setText(mtrip.getClient_name());

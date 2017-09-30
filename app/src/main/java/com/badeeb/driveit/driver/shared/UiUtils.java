@@ -46,8 +46,12 @@ public class UiUtils {
     }
 
     public static ProgressDialog createProgressDialog(Context context, int style){
+        return createProgressDialog(context, "Loading. Please wait...", style);
+    }
+
+    public static ProgressDialog createProgressDialog(Context context, String message, int style){
         ProgressDialog progressDialog = new ProgressDialog(context, style);
-        progressDialog.setMessage("Loading. Please wait...");
+        progressDialog.setMessage(message);
         progressDialog.setCancelable(false);
         return progressDialog;
     }
@@ -108,7 +112,6 @@ public class UiUtils {
      * @param context
      * @param style
      * @param title
-     * @param message
      * @param positiveMessage
      * @param positiveListener
      * @return

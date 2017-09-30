@@ -58,6 +58,7 @@ public class LoginFragment extends Fragment {
     private Toolbar mToolbar;
     private ProgressDialog progressDialog;
     private User mdriver;
+    private MainActivity mactivity;
 
     // attributes that will be used for JSON calls
     private String url = AppPreferences.BASE_URL + "/driver/login";
@@ -88,6 +89,7 @@ public class LoginFragment extends Fragment {
 
         // Attributes Initialization
         mdriver = new User();
+        mactivity = (MainActivity) getActivity();
         // Email
         this.mEmailView = (AutoCompleteTextView) view.findViewById(R.id.email);
         // Password
@@ -207,6 +209,7 @@ public class LoginFragment extends Fragment {
                                 // Success login
                                 // Move to next screen --> Main Activity
                                 mdriver = jsonResponse.getUser();
+                                mactivity.setNavigationViewValues(mdriver);
 
                                 AppSettings settings = AppSettings.getInstance();
                                 settings.saveUser(mdriver);

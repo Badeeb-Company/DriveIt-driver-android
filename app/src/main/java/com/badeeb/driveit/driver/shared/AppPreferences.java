@@ -23,7 +23,7 @@ public class AppPreferences {
     public static final String BASE_URL = "https://drive-it-badeeb.herokuapp.com/api/v1";
 
     // Volley constants
-    public static final int VOLLEY_TIME_OUT = 2000; // Milliseconds
+    public static final int VOLLEY_TIME_OUT = 6000; // Milliseconds
     public static final int VOLLEY_RETRY_COUNTER = 2;
 
     // Trip constants

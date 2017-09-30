@@ -13,6 +13,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
 import com.android.volley.DefaultRetryPolicy;
@@ -177,8 +178,9 @@ public class RequestDialogFragment extends DialogFragment {
 
                                 gotToTripDetailsFragment();
 
+                            } else if(jsonResponse.getJsonMeta().getStatus().equals("422")){
+                                Toast.makeText(mactivity, "Trip was cancelled by client", Toast.LENGTH_LONG).show();
                             } else {
-                                // Invalid Ride Acceptance
                                 availabilityFragment.showRideAcceptMessage(false);
                             }
 
