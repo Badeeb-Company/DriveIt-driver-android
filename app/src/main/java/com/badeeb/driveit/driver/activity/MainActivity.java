@@ -120,8 +120,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             mdriver = msettings.getUser();
             setNavigationViewValues(mdriver);
             if (mdriver.isOnline()) {
-                connectGoogleApiClient();
                 if (mdriver.isInTrip()) {
+                    connectGoogleApiClient();
                     gotToTripDetailsFragment();
                 } else {
                     goToAvialabilityFragment();
@@ -261,6 +261,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             } else {
                 msettings.clearUserInfo();
                 disconnectGoogleApiClient();
+                stopForegroundOnlineService();
                 // TODO remove trip listener
                 logout();
                 goToLogin();
@@ -421,12 +422,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     public void connectGoogleApiClient() {
         if (mGoogleApiClient != null && !mGoogleApiClient.isConnected()) {
+            Log.d(TAG, "connectGoogleApiClient - Trying to connect");
             mGoogleApiClient.connect();
         }
     }
 
     public void disconnectGoogleApiClient() {
         if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            Log.d(TAG, "disconnectGoogleApiClient - Trying to disconnect");
             mGoogleApiClient.disconnect();
         }
     }

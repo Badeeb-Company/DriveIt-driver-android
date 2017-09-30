@@ -5,22 +5,21 @@ package com.badeeb.driveit.driver;
  */
 
 import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-
 import com.badeeb.driveit.driver.activity.MainActivity;
 import com.badeeb.driveit.driver.controllers.DriveItApplication;
 
 public class ForegroundService extends Service {
     private static final String TAG = ForegroundService.class.getSimpleName();
+
     public static final String STOP_FOREGROUND_SERVICE = "STOP_FOREGROUND_SERVICE";
+    public static final int FOREGROUND_SERVICE_ID = 1000;
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -29,8 +28,7 @@ public class ForegroundService extends Service {
             Log.d(TAG, "stop the service..");
             clearForegroundService();
         } else {
-            startForeground(1111, generateNotification("Running"));
-            setDriverAvailabilityListener();
+            startForeground(FOREGROUND_SERVICE_ID, generateNotification("Location tracked"));
         }
         return START_NOT_STICKY;
     }
@@ -62,20 +60,14 @@ public class ForegroundService extends Service {
                 .setSmallIcon(R.drawable.notification_icon)
                 .setContentTitle(getString(R.string.app_name))
                 .setContentIntent(intent)
-                .setContentText(message);
+                .setContentText(message)
+                .setColor(getResources().getColor(R.color.colorAccent));
 
         return notificationBuilder.build();
     }
 
-
-    public void setDriverAvailabilityListener() {
-        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        notificationManager.notify(1111, generateNotification("hello"));
-    }
-
     @Override
     public void onTaskRemoved(Intent rootIntent) {
-
         Log.d(TAG, "on task removed");
         clearForegroundService();
         super.onTaskRemoved(rootIntent);

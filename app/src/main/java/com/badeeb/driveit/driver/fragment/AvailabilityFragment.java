@@ -11,7 +11,6 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -30,7 +29,6 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.badeeb.driveit.driver.ForegroundService;
 import com.badeeb.driveit.driver.R;
 import com.badeeb.driveit.driver.activity.MainActivity;
 import com.badeeb.driveit.driver.model.Trip;
@@ -43,11 +41,7 @@ import com.badeeb.driveit.driver.shared.NotificationsManager;
 import com.badeeb.driveit.driver.shared.OnPermissionsGrantedHandler;
 import com.badeeb.driveit.driver.shared.PermissionsChecker;
 import com.badeeb.driveit.driver.shared.UiUtils;
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -94,6 +88,7 @@ public class AvailabilityFragment extends Fragment {
     private ImageView ivOnline;
     private NotificationsManager notificationsManager;
     private DatabaseReference mRefTrip;
+    private AppSettings appSettings;
 
     // Firebase database reference
     private FirebaseManager firebaseManager;
@@ -113,9 +108,7 @@ public class AvailabilityFragment extends Fragment {
                              Bundle savedInstanceState) {
         Log.d(TAG, "onCreateView - Start");
 
-        // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_avialability, container, false);
-
         init(view);
 
         Log.d(TAG, "onCreateView - End");
@@ -125,32 +118,28 @@ public class AvailabilityFragment extends Fragment {
     private void init(View view) {
         Log.d(TAG, "init - Start");
 
-        // Initiate firebase realtime - database
-        this.firebaseManager = new FirebaseManager();
+        firebaseManager = new FirebaseManager();
         ivOffline = view.findViewById(R.id.ivOffline);
         ivOnline = view.findViewById(R.id.ivOnline);
         locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
         notificationsManager = NotificationsManager.getInstance();
         mactivity = (MainActivity) getActivity();
         mRefTrip = firebaseManager.createChildReference("drivers", mactivity.getDriver().getId() + "", "trip");
+        mtripEventListener = createValueEventListener();
+        onLocationPermissionGrantedHandler = createOnLocationPermissionGrantedHandler();
+        locationChangeReceiver = new LocationChangeReceiver();
+        appSettings = AppSettings.getInstance();
         invitationStatus = InvitationStatus.NONE;
 
-        if (mactivity.getDriver().isOnline()) {
-            setDriverUIOnline();
-        } else {
-            setDriverUIOffline();
-        }
-
-        // Refresh menu toolbar
         mactivity.enbleNavigationView();
 
         setupListeners();
 
-        onLocationPermissionGrantedHandler = createOnLocationPermissionGrantedHandler();
-        locationChangeReceiver = new LocationChangeReceiver();
 
         if (mactivity.getDriver().isOnline()) {
-            setDriverOnline();
+            goOnline();
+        } else {
+            changeUiToOffline();
         }
 
         Log.d(TAG, "init - End");
@@ -169,7 +158,7 @@ public class AvailabilityFragment extends Fragment {
                 Log.d(TAG, "Location - onPermissionsGranted - Start");
                 if (checkLocationService()) {
                     Log.d(TAG, "Location - onPermissionsGranted - Set Driver Online");
-                    setDriverOnline();
+                    showGoOnlineDialog();
                 }
                 Log.d(TAG, "Location - onPermissionsGranted - End");
             }
@@ -230,7 +219,7 @@ public class AvailabilityFragment extends Fragment {
             public void onClick(View cview) {
                 Log.d(TAG, "setupListeners - ivOnline_onClick - Start");
 
-                setDriverOffline();
+                showGoOfflineDialog();
 
                 Log.d(TAG, "setupListeners - ivOnline_onClick - End");
             }
@@ -243,56 +232,21 @@ public class AvailabilityFragment extends Fragment {
         Log.d(TAG, "setupListeners - End");
     }
 
-    private void setDriverUIOffline() {
-        Log.d(TAG, "setDriverUIOffline - Start");
-
-        ivOffline.setVisibility(View.VISIBLE);
-
-        ivOnline.setVisibility(View.GONE);
-
-        Log.d(TAG, "setDriverUIOffline - End");
-    }
-
-    private void setDriverUIOnline() {
-        Log.d(TAG, "setDriverUIOnline - Start");
-
-        ivOffline.setVisibility(View.GONE);
-
-        ivOnline.setVisibility(View.VISIBLE);
-
-        Log.d(TAG, "setDriverUIOnline - End");
-    }
-
     @SuppressWarnings({"MissingPermission"})
-    private void setDriverOnline() {
-        Log.d(TAG, "setDriverOnline - Start");
+    private void showGoOnlineDialog() {
+        Log.d(TAG, "showGoOnlineDialog - Start");
 
         DialogInterface.OnClickListener positiveListener = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-                // Start Listening for Firebase
-                mtripEventListener = createValueEventListener();
-                mRefTrip.addValueEventListener(mtripEventListener);
-
-                // Change image to offline
-                setDriverUIOnline();
-
-                mactivity.getDriver().setOnline();
-                AppSettings appSettings = AppSettings.getInstance();
-                appSettings.saveUser(mactivity.getDriver());
-
-//                mactivity.startForegroundOnlineService();
-
-                // call online endpoint
-                onlineEndpoint();
-                mactivity.connectGoogleApiClient();
+                goOnline();
             }
         };
 
         DialogInterface.OnClickListener negativeListener = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-
+                // TODO
             }
         };
 
@@ -300,37 +254,22 @@ public class AvailabilityFragment extends Fragment {
                 R.string.yes_msg, positiveListener, R.string.no_msg, negativeListener);
 
 
-        Log.d(TAG, "setDriverOnline - End");
+        Log.d(TAG, "showGoOnlineDialog - End");
     }
 
-    private void setDriverOffline() {
-        Log.d(TAG, "setDriverOffline - Start");
-
+    private void showGoOfflineDialog() {
+        Log.d(TAG, "showGoOfflineDialog - Start");
         DialogInterface.OnClickListener positiveListener = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-
-                // Stop listening
-                removeFirebaseListener();
-
-                // Change image to offline
-                setDriverUIOffline();
-
-                mactivity.getDriver().setOffline();
-                AppSettings appSettings = AppSettings.getInstance();
-                appSettings.saveUser(mactivity.getDriver());
-
-                mactivity.disconnectGoogleApiClient();
-
-                // call offline endpoint
-                offlineEndpoint();
+                goOffline();
             }
         };
 
         DialogInterface.OnClickListener negativeListener = new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
-
+                // TODO
             }
         };
 
@@ -338,10 +277,42 @@ public class AvailabilityFragment extends Fragment {
                 R.string.yes_msg, positiveListener, R.string.no_msg, negativeListener);
 
 
-        Log.d(TAG, "setDriverOffline - End");
+        Log.d(TAG, "showGoOfflineDialog - End");
     }
 
-    public void removeFirebaseListener(){
+
+    private void goOffline() {
+        removeFirebaseListener();
+        changeUiToOffline();
+        mactivity.getDriver().setOffline();
+        AppSettings appSettings = AppSettings.getInstance();
+        appSettings.saveUser(mactivity.getDriver());
+        mactivity.stopForegroundOnlineService();
+        callOfflineApi();
+        mactivity.disconnectGoogleApiClient();
+    }
+
+    private void goOnline() {
+        mRefTrip.addValueEventListener(mtripEventListener);
+        changeUiToOnline();
+        mactivity.getDriver().setOnline();
+        appSettings.saveUser(mactivity.getDriver());
+        mactivity.startForegroundOnlineService();
+        callOnlineApi();
+        mactivity.connectGoogleApiClient();
+    }
+
+    private void changeUiToOffline() {
+        ivOffline.setVisibility(View.VISIBLE);
+        ivOnline.setVisibility(View.GONE);
+    }
+
+    private void changeUiToOnline() {
+        ivOffline.setVisibility(View.GONE);
+        ivOnline.setVisibility(View.VISIBLE);
+    }
+
+    public void removeFirebaseListener() {
         mRefTrip.removeEventListener(mtripEventListener);
     }
 
@@ -453,13 +424,13 @@ public class AvailabilityFragment extends Fragment {
     public void onResume() {
         super.onResume();
         paused = false;
-        switch (invitationStatus){
+        switch (invitationStatus) {
             case AVAILABLE:
                 FragmentManager fragmentManager = getFragmentManager();
                 mrequestDialogFragment.show(fragmentManager, mrequestDialogFragment.TAG);
                 break;
             case CANCELLED:
-                if(mrequestDialogFragment != null && mrequestDialogFragment.isVisible()){
+                if (mrequestDialogFragment != null && mrequestDialogFragment.isVisible()) {
                     mrequestDialogFragment.dismiss();
                 }
                 break;
@@ -496,9 +467,9 @@ public class AvailabilityFragment extends Fragment {
         }
     }
 
-    private void onlineEndpoint() {
+    private void callOnlineApi() {
 
-        Log.d(TAG, "onlineEndpoint - Start");
+        Log.d(TAG, "callOnlineApi - Start");
 
         try {
 
@@ -514,7 +485,7 @@ public class AvailabilityFragment extends Fragment {
 
             JSONObject jsonObject = new JSONObject(gson.toJson(request));
 
-            Log.d(TAG, "onlineEndpoint - Json Request" + gson.toJson(request));
+            Log.d(TAG, "callOnlineApi - Json Request" + gson.toJson(request));
 
             // Call user login service
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, url, jsonObject,
@@ -524,16 +495,16 @@ public class AvailabilityFragment extends Fragment {
                         @Override
                         public void onResponse(JSONObject response) {
                             // Response Handling
-                            Log.d(TAG, "onlineEndpoint - onResponse - Start");
+                            Log.d(TAG, "callOnlineApi - onResponse - Start");
 
-                            Log.d(TAG, "onlineEndpoint - onResponse - Json Response: " + response.toString());
+                            Log.d(TAG, "callOnlineApi - onResponse - Json Response: " + response.toString());
 
                             String responseData = response.toString();
 
                             JsonDriverStatus jsonResponse = gson.fromJson(responseData, JsonDriverStatus.class);
 
-                            Log.d(TAG, "onlineEndpoint - onResponse - Status: " + jsonResponse.getJsonMeta().getStatus());
-                            Log.d(TAG, "onlineEndpoint - onResponse - Message: " + jsonResponse.getJsonMeta().getMessage());
+                            Log.d(TAG, "callOnlineApi - onResponse - Status: " + jsonResponse.getJsonMeta().getStatus());
+                            Log.d(TAG, "callOnlineApi - onResponse - Message: " + jsonResponse.getJsonMeta().getMessage());
 
                             // check status  code of response
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
@@ -543,7 +514,7 @@ public class AvailabilityFragment extends Fragment {
                                 // Failure
                             }
 
-                            Log.d(TAG, "onlineEndpoint - onResponse - End");
+                            Log.d(TAG, "callOnlineApi - onResponse - End");
                         }
                     },
 
@@ -552,7 +523,7 @@ public class AvailabilityFragment extends Fragment {
                         @Override
                         public void onErrorResponse(VolleyError error) {
                             // Network Error Handling
-                            Log.d(TAG, "onlineEndpoint - onErrorResponse: " + error.toString());
+                            Log.d(TAG, "callOnlineApi - onErrorResponse: " + error.toString());
 
                             if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
@@ -560,8 +531,8 @@ public class AvailabilityFragment extends Fragment {
 
                                 JsonDriverStatus jsonResponse = gson.fromJson(responseData, JsonDriverStatus.class);
 
-                                Log.d(TAG, "onlineEndpoint - Error Status: " + jsonResponse.getJsonMeta().getStatus());
-                                Log.d(TAG, "onlineEndpoint - Error Message: " + jsonResponse.getJsonMeta().getMessage());
+                                Log.d(TAG, "callOnlineApi - Error Status: " + jsonResponse.getJsonMeta().getStatus());
+                                Log.d(TAG, "callOnlineApi - Error Message: " + jsonResponse.getJsonMeta().getMessage());
 
                                 Toast.makeText(getContext(), jsonResponse.getJsonMeta().getMessage(), Toast.LENGTH_SHORT).show();
                             }
@@ -579,7 +550,7 @@ public class AvailabilityFragment extends Fragment {
                     headers.put("Accept", "*");
                     headers.put("Authorization", "Token token=" + mactivity.getDriver().getToken());
 
-                    Log.d(TAG, "onlineEndpoint - Json Header - " + "Token token=" + mactivity.getDriver().getToken());
+                    Log.d(TAG, "callOnlineApi - Json Header - " + "Token token=" + mactivity.getDriver().getToken());
                     return headers;
                 }
             };
@@ -593,12 +564,12 @@ public class AvailabilityFragment extends Fragment {
             e.printStackTrace();
         }
 
-        Log.d(TAG, "onlineEndpoint - End");
+        Log.d(TAG, "callOnlineApi - End");
     }
 
-    private void offlineEndpoint() {
+    private void callOfflineApi() {
 
-        Log.d(TAG, "offlineEndpoint - Start");
+        Log.d(TAG, "callOfflineApi - Start");
 
         try {
 
@@ -614,7 +585,7 @@ public class AvailabilityFragment extends Fragment {
 
             JSONObject jsonObject = new JSONObject(gson.toJson(request));
 
-            Log.d(TAG, "offlineEndpoint - Json Request" + gson.toJson(request));
+            Log.d(TAG, "callOfflineApi - Json Request" + gson.toJson(request));
 
             // Call offline service
             JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, url, jsonObject,
@@ -624,16 +595,16 @@ public class AvailabilityFragment extends Fragment {
                         @Override
                         public void onResponse(JSONObject response) {
                             // Response Handling
-                            Log.d(TAG, "offlineEndpoint - onResponse - Start");
+                            Log.d(TAG, "callOfflineApi - onResponse - Start");
 
-                            Log.d(TAG, "offlineEndpoint - onResponse - Json Response: " + response.toString());
+                            Log.d(TAG, "callOfflineApi - onResponse - Json Response: " + response.toString());
 
                             String responseData = response.toString();
 
                             JsonDriverStatus jsonResponse = gson.fromJson(responseData, JsonDriverStatus.class);
 
-                            Log.d(TAG, "offlineEndpoint - onResponse - Status: " + jsonResponse.getJsonMeta().getStatus());
-                            Log.d(TAG, "offlineEndpoint - onResponse - Message: " + jsonResponse.getJsonMeta().getMessage());
+                            Log.d(TAG, "callOfflineApi - onResponse - Status: " + jsonResponse.getJsonMeta().getStatus());
+                            Log.d(TAG, "callOfflineApi - onResponse - Message: " + jsonResponse.getJsonMeta().getMessage());
 
                             // check status  code of response
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
@@ -643,7 +614,7 @@ public class AvailabilityFragment extends Fragment {
                                 // Failure
                             }
 
-                            Log.d(TAG, "offlineEndpoint - onResponse - End");
+                            Log.d(TAG, "callOfflineApi - onResponse - End");
                         }
                     },
 
@@ -652,7 +623,7 @@ public class AvailabilityFragment extends Fragment {
                         @Override
                         public void onErrorResponse(VolleyError error) {
                             // Network Error Handling
-                            Log.d(TAG, "offlineEndpoint - onErrorResponse: " + error.toString());
+                            Log.d(TAG, "callOfflineApi - onErrorResponse: " + error.toString());
 
                             if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
@@ -660,8 +631,8 @@ public class AvailabilityFragment extends Fragment {
 
                                 JsonDriverStatus jsonResponse = gson.fromJson(responseData, JsonDriverStatus.class);
 
-                                Log.d(TAG, "offlineEndpoint - Error Status: " + jsonResponse.getJsonMeta().getStatus());
-                                Log.d(TAG, "offlineEndpoint - Error Message: " + jsonResponse.getJsonMeta().getMessage());
+                                Log.d(TAG, "callOfflineApi - Error Status: " + jsonResponse.getJsonMeta().getStatus());
+                                Log.d(TAG, "callOfflineApi - Error Message: " + jsonResponse.getJsonMeta().getMessage());
 
                                 Toast.makeText(getContext(), jsonResponse.getJsonMeta().getMessage(), Toast.LENGTH_SHORT).show();
                             }
@@ -679,7 +650,7 @@ public class AvailabilityFragment extends Fragment {
                     headers.put("Accept", "*");
                     headers.put("Authorization", "Token token=" + mactivity.getDriver().getToken());
 
-                    Log.d(TAG, "offlineEndpoint - Json Header - " + "Token token=" + mactivity.getDriver().getToken());
+                    Log.d(TAG, "callOfflineApi - Json Header - " + "Token token=" + mactivity.getDriver().getToken());
 
                     return headers;
                 }
@@ -694,7 +665,7 @@ public class AvailabilityFragment extends Fragment {
             e.printStackTrace();
         }
 
-        Log.d(TAG, "offlineEndpoint - End");
+        Log.d(TAG, "callOfflineApi - End");
     }
 
     private enum InvitationStatus {NONE, AVAILABLE, CANCELLED}

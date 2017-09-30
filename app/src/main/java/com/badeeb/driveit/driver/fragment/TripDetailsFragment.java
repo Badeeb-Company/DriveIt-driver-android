@@ -258,7 +258,7 @@ public class TripDetailsFragment extends Fragment {
         AvailabilityFragment availabilityFragment = new AvailabilityFragment();
         FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.main_frame, availabilityFragment, availabilityFragment.TAG);
+        fragmentTransaction.replace(R.id.main_frame, availabilityFragment, availabilityFragment.TAG);
 //                                fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
         fragmentTransaction.commit();
     }
