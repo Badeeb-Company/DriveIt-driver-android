@@ -30,6 +30,7 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.badeeb.driveit.driver.ForegroundService;
 import com.badeeb.driveit.driver.R;
 import com.badeeb.driveit.driver.activity.MainActivity;
 import com.badeeb.driveit.driver.model.Trip;
@@ -92,7 +93,7 @@ public class AvailabilityFragment extends Fragment {
     private ImageView ivOffline;
     private ImageView ivOnline;
     private NotificationsManager notificationsManager;
-    DatabaseReference mRefTrip;
+    private DatabaseReference mRefTrip;
 
     // Firebase database reference
     private FirebaseManager firebaseManager;
@@ -279,6 +280,8 @@ public class AvailabilityFragment extends Fragment {
                 mactivity.getDriver().setOnline();
                 AppSettings appSettings = AppSettings.getInstance();
                 appSettings.saveUser(mactivity.getDriver());
+
+//                mactivity.startForegroundOnlineService();
 
                 // call online endpoint
                 onlineEndpoint();

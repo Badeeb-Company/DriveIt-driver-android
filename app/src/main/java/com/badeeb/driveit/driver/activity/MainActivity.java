@@ -1,5 +1,7 @@
 package com.badeeb.driveit.driver.activity;
 
+import android.app.ActivityManager;
+import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -25,6 +27,7 @@ import com.android.volley.Response;
 import com.android.volley.ServerError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.badeeb.driveit.driver.ForegroundService;
 import com.badeeb.driveit.driver.R;
 import com.badeeb.driveit.driver.fragment.AvailabilityFragment;
 import com.badeeb.driveit.driver.fragment.LoginFragment;
@@ -51,6 +54,8 @@ import org.json.JSONObject;
 import org.parceler.Parcels;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -111,12 +116,12 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mnavigationView.setNavigationItemSelectedListener(this);
 
         // Load Login Fragment inside Main activity
-        if(msettings.isLoggedIn()){
+        if (msettings.isLoggedIn()) {
             mdriver = msettings.getUser();
             setNavigationViewValues(mdriver);
-            if(mdriver.isOnline()){
+            if (mdriver.isOnline()) {
                 connectGoogleApiClient();
-                if(mdriver.isInTrip()){
+                if (mdriver.isInTrip()) {
                     gotToTripDetailsFragment();
                 } else {
                     goToAvialabilityFragment();
@@ -131,7 +136,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Log.d(TAG, "init - End");
     }
 
-    public void setNavigationViewValues(User client){
+    public void setNavigationViewValues(User client) {
         View view = mnavigationView.getHeaderView(0);
         RoundedImageView profilePhoto = (RoundedImageView) view.findViewById(R.id.rivProfilePhoto);
         TextView tvProfileName = (TextView) view.findViewById(R.id.tv_profile_name);
@@ -143,6 +148,38 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 .into(profilePhoto);
     }
 
+    public void startForegroundOnlineService() {
+        Intent foregroundServiceIntent = new Intent(this, ForegroundService.class);
+        foregroundServiceIntent.putExtra(ForegroundService.STOP_FOREGROUND_SERVICE, false);
+        startService(foregroundServiceIntent);
+    }
+
+    public void stopForegroundOnlineService() {
+        Intent foregroundServiceIntent = new Intent(this, ForegroundService.class);
+        foregroundServiceIntent.putExtra(ForegroundService.STOP_FOREGROUND_SERVICE, true);
+        startService(foregroundServiceIntent);
+    }
+
+    private boolean isServiceRunning(String serviceName) {
+        boolean serviceRunning = false;
+        ActivityManager am = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
+        List<ActivityManager.RunningServiceInfo> l = am.getRunningServices(50);
+        Iterator<ActivityManager.RunningServiceInfo> i = l.iterator();
+        while (i.hasNext()) {
+            ActivityManager.RunningServiceInfo runningServiceInfo = i
+                    .next();
+
+            if (runningServiceInfo.service.getClassName().equals(serviceName)) {
+                serviceRunning = true;
+
+                if (runningServiceInfo.foreground) {
+                    //service run in foreground
+                }
+            }
+        }
+        return serviceRunning;
+    }
+
     private void initGoogleApiClient() {
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API)
@@ -151,6 +188,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                     public void onConnected(Bundle bundle) {
                         registerLocationUpdate();
                     }
+
                     @Override
                     public void onConnectionSuspended(int i) {
                         Toast.makeText(MainActivity.this, "API client connection suspended", Toast.LENGTH_LONG).show();
@@ -179,8 +217,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Log.d(TAG, "setFirebaseDriverLocation - Start");
 
         DatabaseReference mRef = firebaseManager.createChildReference("locations");
-        mRef.child("drivers").child(mdriver.getId()+"").child("lat").setValue(currentLocation.getLatitude() + new Random().nextInt()%5 * 0.0000001);
-        mRef.child("drivers").child(mdriver.getId()+"").child("long").setValue(currentLocation.getLongitude());
+        mRef.child("drivers").child(mdriver.getId() + "").child("lat").setValue(currentLocation.getLatitude() + new Random().nextInt() % 5 * 0.0000001);
+        mRef.child("drivers").child(mdriver.getId() + "").child("long").setValue(currentLocation.getLongitude());
 
         Log.d(TAG, "setFirebaseDriverLocation - End");
     }
@@ -220,8 +258,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             if (mdriver.isInTrip()) {
                 UiUtils.showDialog(this, R.style.DialogTheme,
                         R.string.logout_error, R.string.ok_btn_dialog, null);
-            }
-            else {
+            } else {
                 msettings.clearUserInfo();
                 disconnectGoogleApiClient();
                 // TODO remove trip listener
@@ -253,11 +290,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void goToAvialabilityFragment() {
         AvailabilityFragment availabilityFragment = new AvailabilityFragment();
         FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
-        fragmentTransaction.add(R.id.main_frame, availabilityFragment, availabilityFragment.TAG);
+        fragmentTransaction.replace(R.id.main_frame, availabilityFragment, availabilityFragment.TAG);
         fragmentTransaction.commit();
     }
 
-    private void goToLogin(){
+    private void goToLogin() {
         LoginFragment loginFragment = new LoginFragment();
         FragmentTransaction fragmentTransaction = mFragmentManager.beginTransaction();
         fragmentTransaction.add(R.id.main_frame, loginFragment, loginFragment.TAG);
@@ -274,8 +311,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         mtoggle.setDrawerIndicatorEnabled(true);
     }
 
-    public void setDriver(User driver){
-       mdriver = driver;
+    public void setDriver(User driver) {
+        mdriver = driver;
     }
 
     @Override
@@ -283,7 +320,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         super.onDestroy();
     }
 
-    public User getDriver(){
+    public User getDriver() {
         return mdriver;
     }
 
@@ -325,7 +362,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
                             // Move to next screen --> Login fragment
 //                            goToLogin();
-
 
 
                             Log.d(TAG, "logout - onResponse - End");
@@ -384,13 +420,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     public void connectGoogleApiClient() {
-        if(mGoogleApiClient != null && !mGoogleApiClient.isConnected()){
+        if (mGoogleApiClient != null && !mGoogleApiClient.isConnected()) {
             mGoogleApiClient.connect();
         }
     }
 
-    public void disconnectGoogleApiClient(){
-        if(mGoogleApiClient != null && mGoogleApiClient.isConnected()){
+    public void disconnectGoogleApiClient() {
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
             mGoogleApiClient.disconnect();
         }
     }
