@@ -2,6 +2,7 @@ package com.badeeb.driveit.driver.fragment;
 
 
 import android.Manifest;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -34,6 +35,7 @@ import com.badeeb.driveit.driver.model.Trip;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.badeeb.driveit.driver.shared.AppSettings;
+import com.badeeb.driveit.driver.shared.UiUtils;
 import com.bumptech.glide.Glide;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -57,6 +59,7 @@ public class TripDetailsFragment extends Fragment {
     // Class Attributes
     private Trip mtrip;
     private AppSettings settings;
+    private MainActivity mactivity;
 
     public TripDetailsFragment() {
         // Required empty public constructor
@@ -81,6 +84,7 @@ public class TripDetailsFragment extends Fragment {
         Log.d(TAG, "init - Start");
 
         this.mtrip = Parcels.unwrap(getArguments().getParcelable("trip"));
+        mactivity = (MainActivity) getActivity();
 
         // Initialize text fields with their correct values
         RoundedImageView driverPhoto = view.findViewById(R.id.iProfileImage);
@@ -162,6 +166,9 @@ public class TripDetailsFragment extends Fragment {
             gsonBuilder.excludeFieldsWithoutExposeAnnotation();
             final Gson gson = gsonBuilder.create();
 
+            final ProgressDialog progressDialog = UiUtils.createProgressDialog(mactivity);
+            progressDialog.show();
+
             JSONObject jsonObject = new JSONObject(gson.toJson(request));
 
             Log.d(TAG, "tripComplete - Json Request"+ gson.toJson(request));
@@ -184,6 +191,8 @@ public class TripDetailsFragment extends Fragment {
 
                             Log.d(TAG, "tripComplete - onResponse - Status: " + jsonResponse.getJsonMeta().getStatus());
                             Log.d(TAG, "tripComplete - onResponse - Message: " + jsonResponse.getJsonMeta().getMessage());
+
+                            progressDialog.dismiss();
 
                             // check status  code of response
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
@@ -212,6 +221,7 @@ public class TripDetailsFragment extends Fragment {
                         public void onErrorResponse(VolleyError error) {
                             // Network Error Handling
                             Log.d(TAG, "tripComplete - onErrorResponse: " + error.toString());
+                            progressDialog.dismiss();
 
                             if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;

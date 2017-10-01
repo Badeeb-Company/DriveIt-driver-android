@@ -114,7 +114,7 @@ public class SignupFragment extends Fragment {
         mactivity = (MainActivity) getActivity();
         onStoragePermissionGrantedHandler = createOnStoragePermissionGrantedHandler();
 
-		progressDialog = UiUtils.createProgressDialog(getActivity(), "Signing up...", R.style.DialogTheme);
+		progressDialog = UiUtils.createProgressDialog(getActivity(), "Signing up...");
         bSelectPhoto = (Button) view.findViewById(R.id.bSelectPhoto);
         name = (EditText) view.findViewById(R.id.name);
         email = (EditText) view.findViewById(R.id.email);
@@ -181,8 +181,7 @@ public class SignupFragment extends Fragment {
 
         StorageReference storageRef = storage.getReference();
         StorageReference imageReference = storageRef.child("clients/" + UUID.randomUUID());
-        final ProgressDialog uploadPhotoProgressDialog = UiUtils.createProgressDialog(mactivity, "Uploading photo...",
-                R.style.DialogTheme);
+        final ProgressDialog uploadPhotoProgressDialog = UiUtils.createProgressDialog(mactivity, "Uploading photo...");
 
         uploadPhotoProgressDialog.show();
 

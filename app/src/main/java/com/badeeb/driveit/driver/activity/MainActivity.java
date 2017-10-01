@@ -31,13 +31,16 @@ import com.badeeb.driveit.driver.ForegroundService;
 import com.badeeb.driveit.driver.R;
 import com.badeeb.driveit.driver.fragment.AvailabilityFragment;
 import com.badeeb.driveit.driver.fragment.LoginFragment;
+import com.badeeb.driveit.driver.fragment.RequestDialogFragment;
 import com.badeeb.driveit.driver.fragment.TripDetailsFragment;
 import com.badeeb.driveit.driver.model.JsonLogout;
+import com.badeeb.driveit.driver.model.Trip;
 import com.badeeb.driveit.driver.model.User;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.badeeb.driveit.driver.shared.AppSettings;
 import com.badeeb.driveit.driver.shared.FirebaseManager;
+import com.badeeb.driveit.driver.shared.NotificationsManager;
 import com.badeeb.driveit.driver.shared.UiUtils;
 import com.bumptech.glide.Glide;
 import com.google.android.gms.common.ConnectionResult;
@@ -45,7 +48,10 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.makeramen.roundedimageview.RoundedImageView;
@@ -59,6 +65,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import static java.security.AccessController.getContext;
+
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     // Logging Purpose
@@ -71,12 +79,18 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private ActionBarDrawerToggle mtoggle;
     private NavigationView mnavigationView;
     private AppSettings msettings;
+    private RequestDialogFragment mrequestDialogFragment;
+    private boolean paused;
+    private InvitationStatus invitationStatus;
 
     private User mdriver;
     private GoogleApiClient mGoogleApiClient;
     private LocationListener locationListener;
     private FirebaseManager firebaseManager;
     private Location currentLocation;
+    private NotificationsManager notificationsManager;
+    private ValueEventListener mtripEventListener;
+    private DatabaseReference mRefTrip;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,6 +112,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         msettings = AppSettings.getInstance();
         locationListener = createLocationListener();
         firebaseManager = new FirebaseManager();
+        notificationsManager = NotificationsManager.getInstance();
+        mtripEventListener = createValueEventListener();
+        invitationStatus = InvitationStatus.NONE;
         initGoogleApiClient();
 
 
@@ -136,6 +153,99 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Log.d(TAG, "init - End");
     }
 
+    private void sendNotification() {
+        Intent intent = new Intent(this, MainActivity.class);
+        notificationsManager.createNotification(this, getText(R.string.notification_title_ride).toString(),
+                getText(R.string.notification_msg_ride).toString(), intent, getResources());
+    }
+
+    public void removeFirebaseListener() {
+        if(mRefTrip != null){
+            mRefTrip.removeEventListener(mtripEventListener);
+        }
+    }
+
+    public void addFirebaseListener() {
+        if(mRefTrip == null){
+            mRefTrip = firebaseManager.createChildReference("drivers", mdriver.getId() + "", "trip");
+        }
+        mRefTrip.addValueEventListener(mtripEventListener);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        paused = false;
+        switch (invitationStatus) {
+            case AVAILABLE:
+                mrequestDialogFragment.show(getSupportFragmentManager(), mrequestDialogFragment.TAG);
+                break;
+            case CANCELLED:
+                if (mrequestDialogFragment != null && mrequestDialogFragment.isVisible()) {
+                    mrequestDialogFragment.dismiss();
+                }
+                break;
+        }
+        invitationStatus = InvitationStatus.NONE;
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        paused = true;
+    }
+
+    private ValueEventListener createValueEventListener() {
+        return new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                Log.d(TAG, "createValueEventListener - mdatabase_onDataChange - Start");
+
+                if (dataSnapshot.getValue() != null) {
+                    Trip fdbTrip = dataSnapshot.getValue(Trip.class);
+                    System.out.println("TRIP STATUS: " + fdbTrip.getState());
+
+                    if (fdbTrip.getState().equals(AppPreferences.TRIP_PENDING)) {
+
+                        mrequestDialogFragment = new RequestDialogFragment();
+                        Bundle bundle = new Bundle();
+                        bundle.putParcelable("trip", Parcels.wrap(fdbTrip));
+                        mrequestDialogFragment.setArguments(bundle);
+                        mrequestDialogFragment.setCancelable(false);
+                        showDialog();
+                        sendNotification();
+                    } else {
+                        dismissDialog();
+                    }
+
+                }
+
+                Log.d(TAG, "createValueEventListener - mdatabase_onDataChange - End");
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        };
+    }
+
+    private void showDialog() {
+        if (paused) {
+            invitationStatus = InvitationStatus.AVAILABLE;
+        } else {
+            mrequestDialogFragment.show(getSupportFragmentManager(), mrequestDialogFragment.TAG);
+        }
+    }
+
+    private void dismissDialog() {
+        if (paused) {
+            invitationStatus = InvitationStatus.CANCELLED;
+        } else if (mrequestDialogFragment != null && mrequestDialogFragment.isVisible()) {
+            mrequestDialogFragment.dismiss();
+        }
+    }
+
     public void setNavigationViewValues(User client) {
         View view = mnavigationView.getHeaderView(0);
         RoundedImageView profilePhoto = (RoundedImageView) view.findViewById(R.id.rivProfilePhoto);
@@ -158,26 +268,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Intent foregroundServiceIntent = new Intent(this, ForegroundService.class);
         foregroundServiceIntent.putExtra(ForegroundService.STOP_FOREGROUND_SERVICE, true);
         startService(foregroundServiceIntent);
-    }
-
-    private boolean isServiceRunning(String serviceName) {
-        boolean serviceRunning = false;
-        ActivityManager am = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
-        List<ActivityManager.RunningServiceInfo> l = am.getRunningServices(50);
-        Iterator<ActivityManager.RunningServiceInfo> i = l.iterator();
-        while (i.hasNext()) {
-            ActivityManager.RunningServiceInfo runningServiceInfo = i
-                    .next();
-
-            if (runningServiceInfo.service.getClassName().equals(serviceName)) {
-                serviceRunning = true;
-
-                if (runningServiceInfo.foreground) {
-                    //service run in foreground
-                }
-            }
-        }
-        return serviceRunning;
     }
 
     private void initGoogleApiClient() {
@@ -262,7 +352,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 msettings.clearUserInfo();
                 disconnectGoogleApiClient();
                 stopForegroundOnlineService();
-                // TODO remove trip listener
+                removeFirebaseListener();
+                mRefTrip = null;
                 logout();
                 goToLogin();
             }
@@ -433,4 +524,6 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             mGoogleApiClient.disconnect();
         }
     }
+
+    private enum InvitationStatus {NONE, AVAILABLE, CANCELLED}
 }

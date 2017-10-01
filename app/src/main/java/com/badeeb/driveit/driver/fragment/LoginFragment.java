@@ -95,7 +95,7 @@ public class LoginFragment extends Fragment {
         // Password
         this.mPasswordView = (EditText) view.findViewById(R.id.password);
         // Progress bar
-		progressDialog = UiUtils.createProgressDialog(getActivity(), R.style.DialogTheme);
+		progressDialog = UiUtils.createProgressDialog(getActivity());
 
         // Setup listeners
         setupListeners(view);

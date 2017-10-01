@@ -69,25 +69,21 @@ public class AvailabilityFragment extends Fragment {
     public static final String TAG = AvailabilityFragment.class.getSimpleName();
 
     // Constants
-    private final int DIALOG_RESULT = 200;
     private final int PERM_LOCATION_RQST_CODE = 100;
     private final String ONLINE = "ONLINE";
     private final String OFFLINE = "OFFLINE";
 
-    // Class Attribute
+    private ImageView ivOffline;
+    private ImageView ivOnline;
+
     private Location currentLocation;
     private LocationManager locationManager;
-    private RequestDialogFragment mrequestDialogFragment;
-    private ValueEventListener mtripEventListener;
     private boolean paused;
     private InvitationStatus invitationStatus;
     private OnPermissionsGrantedHandler onLocationPermissionGrantedHandler;
     private AlertDialog locationDisabledWarningDialog;
     private LocationChangeReceiver locationChangeReceiver;
-    private ImageView ivOffline;
-    private ImageView ivOnline;
-    private NotificationsManager notificationsManager;
-    private DatabaseReference mRefTrip;
+
     private AppSettings appSettings;
 
     // Firebase database reference
@@ -122,10 +118,7 @@ public class AvailabilityFragment extends Fragment {
         ivOffline = view.findViewById(R.id.ivOffline);
         ivOnline = view.findViewById(R.id.ivOnline);
         locationManager = (LocationManager) getContext().getSystemService(Context.LOCATION_SERVICE);
-        notificationsManager = NotificationsManager.getInstance();
         mactivity = (MainActivity) getActivity();
-        mRefTrip = firebaseManager.createChildReference("drivers", mactivity.getDriver().getId() + "", "trip");
-        mtripEventListener = createValueEventListener();
         onLocationPermissionGrantedHandler = createOnLocationPermissionGrantedHandler();
         locationChangeReceiver = new LocationChangeReceiver();
         appSettings = AppSettings.getInstance();
@@ -225,10 +218,6 @@ public class AvailabilityFragment extends Fragment {
             }
         });
 
-        // Set Firebase database Listener for trip
-        // Create listener on firebase realtime -
-        mtripEventListener = createValueEventListener();
-
         Log.d(TAG, "setupListeners - End");
     }
 
@@ -282,7 +271,7 @@ public class AvailabilityFragment extends Fragment {
 
 
     private void goOffline() {
-        removeFirebaseListener();
+        mactivity.removeFirebaseListener();
         changeUiToOffline();
         mactivity.getDriver().setOffline();
         AppSettings appSettings = AppSettings.getInstance();
@@ -293,7 +282,7 @@ public class AvailabilityFragment extends Fragment {
     }
 
     private void goOnline() {
-        mRefTrip.addValueEventListener(mtripEventListener);
+        mactivity.addFirebaseListener();
         changeUiToOnline();
         mactivity.getDriver().setOnline();
         appSettings.saveUser(mactivity.getDriver());
@@ -312,149 +301,6 @@ public class AvailabilityFragment extends Fragment {
         ivOnline.setVisibility(View.VISIBLE);
     }
 
-    public void removeFirebaseListener() {
-        mRefTrip.removeEventListener(mtripEventListener);
-    }
-
-    public void showRideRejectMessage(boolean isSuccess) {
-        Log.d(TAG, "showRideRejectMessage - Start");
-
-        if (isSuccess) {
-            Toast.makeText(getContext(), getString(R.string.ride_rejected_success), Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(getContext(), getString(R.string.ride_rejected_error), Toast.LENGTH_SHORT).show();
-        }
-
-        Log.d(TAG, "showRideRejectMessage - End");
-    }
-
-    public void showRideAcceptMessage(boolean isSuccess) {
-        Log.d(TAG, "showRideAcceptMessage - Start");
-
-        if (isSuccess) {
-            Toast.makeText(getContext(), getString(R.string.ride_accepted_success), Toast.LENGTH_SHORT).show();
-        } else {
-            Toast.makeText(getContext(), getString(R.string.ride_accepted_error), Toast.LENGTH_SHORT).show();
-        }
-
-        Log.d(TAG, "showRideAcceptMessage - End");
-    }
-
-    public void displayMessage(String msg) {
-        Log.d(TAG, "displayMessage - Start");
-
-        Toast.makeText(getContext(), msg, Toast.LENGTH_SHORT).show();
-
-        Log.d(TAG, "displayMessage - End");
-    }
-
-    private void setFirebaseDriverLocation() {
-        Log.d(TAG, "setFirebaseDriverLocation - Start");
-
-        DatabaseReference mRef = firebaseManager.createChildReference("locations");
-        mRef.child("drivers").child(mactivity.getDriver().getId() + "").child("lat").setValue(currentLocation.getLatitude() + new Random().nextInt() % 5);
-        mRef.child("drivers").child(mactivity.getDriver().getId() + "").child("long").setValue(currentLocation.getLongitude());
-
-        Log.d(TAG, "setFirebaseDriverLocation - End");
-    }
-
-    // ---------------------------------------------------------------
-    // Location interface methods
-    private LocationListener createLocationListener() {
-        return new LocationListener() {
-            @Override
-            public void onLocationChanged(Location location) {
-                currentLocation = location;
-                setFirebaseDriverLocation();
-            }
-        };
-    }
-
-    private ValueEventListener createValueEventListener() {
-        return new ValueEventListener() {
-            @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                Log.d(TAG, "createValueEventListener - mdatabase_onDataChange - Start");
-
-                if (dataSnapshot.getValue() != null) {
-                    Trip fdbTrip = dataSnapshot.getValue(Trip.class);
-                    System.out.println("TRIP STATUS: " + fdbTrip.getState());
-
-                    if (fdbTrip.getState().equals(AppPreferences.TRIP_PENDING)) {
-
-                        mrequestDialogFragment = new RequestDialogFragment();
-                        Bundle bundle = new Bundle();
-                        bundle.putParcelable("trip", Parcels.wrap(fdbTrip));
-                        mrequestDialogFragment.setArguments(bundle);
-                        mrequestDialogFragment.setCancelable(false);
-
-                        mrequestDialogFragment.setTargetFragment(AvailabilityFragment.this, DIALOG_RESULT);
-                        showDialog();
-
-                        sendNotification();
-                    } else {
-                        dismissDialog();
-                    }
-
-                }
-
-                Log.d(TAG, "createValueEventListener - mdatabase_onDataChange - End");
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        };
-    }
-
-    private void sendNotification() {
-        Intent intent = new Intent(getContext(), MainActivity.class);
-        notificationsManager.createNotification(getContext(), getText(R.string.notification_title_ride).toString(),
-                getText(R.string.notification_msg_ride).toString(), intent, getResources());
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
-        paused = true;
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
-        paused = false;
-        switch (invitationStatus) {
-            case AVAILABLE:
-                FragmentManager fragmentManager = getFragmentManager();
-                mrequestDialogFragment.show(fragmentManager, mrequestDialogFragment.TAG);
-                break;
-            case CANCELLED:
-                if (mrequestDialogFragment != null && mrequestDialogFragment.isVisible()) {
-                    mrequestDialogFragment.dismiss();
-                }
-                break;
-        }
-        invitationStatus = InvitationStatus.NONE;
-    }
-
-    private void showDialog() {
-        if (paused) {
-            invitationStatus = InvitationStatus.AVAILABLE;
-        } else {
-            FragmentManager fragmentManager = getFragmentManager();
-            mrequestDialogFragment.show(fragmentManager, mrequestDialogFragment.TAG);
-        }
-    }
-
-    private void dismissDialog() {
-        if (paused) {
-            invitationStatus = InvitationStatus.CANCELLED;
-        } else if (mrequestDialogFragment != null && mrequestDialogFragment.isVisible()) {
-            mrequestDialogFragment.dismiss();
-        }
-    }
-
     private final class LocationChangeReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -468,11 +314,8 @@ public class AvailabilityFragment extends Fragment {
     }
 
     private void callOnlineApi() {
-
         Log.d(TAG, "callOnlineApi - Start");
-
         try {
-
             String url = AppPreferences.BASE_URL + "/driver";
 
             JsonDriverStatus request = new JsonDriverStatus();

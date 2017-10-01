@@ -128,9 +128,6 @@ public class RequestDialogFragment extends DialogFragment {
 
         String url = AppPreferences.BASE_URL + "/trip" + "/" + mtrip.getId() + "/accept ";
 
-        final AvailabilityFragment availabilityFragment = (AvailabilityFragment) getTargetFragment();
-
-
         try {
 
             JsonRequestTrip request = new JsonRequestTrip();
@@ -167,11 +164,9 @@ public class RequestDialogFragment extends DialogFragment {
                             // check status  code of response
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
                                 // Success Ride Acceptance
-                                availabilityFragment.showRideAcceptMessage(true);
-                                availabilityFragment.removeFirebaseListener();
-
+                                toast(R.string.ride_accepted_success);
+                                mactivity.removeFirebaseListener();
                                 mactivity.getDriver().setInTrip();
-
                                 AppSettings settings = AppSettings.getInstance();
                                 settings.saveUser(mactivity.getDriver());
                                 settings.saveTrip(mtrip);
@@ -179,9 +174,9 @@ public class RequestDialogFragment extends DialogFragment {
                                 gotToTripDetailsFragment();
 
                             } else if(jsonResponse.getJsonMeta().getStatus().equals("422")){
-                                Toast.makeText(mactivity, "Trip was cancelled by client", Toast.LENGTH_LONG).show();
+                                toast("Trip was cancelled by client");
                             } else {
-                                availabilityFragment.showRideAcceptMessage(false);
+                                toast(R.string.ride_accepted_error);
                             }
 
 
@@ -208,7 +203,7 @@ public class RequestDialogFragment extends DialogFragment {
                                 Log.d(TAG, "acceptRide - Error Status: " + jsonResponse.getJsonMeta().getStatus());
                                 Log.d(TAG, "acceptRide - Error Message: " + jsonResponse.getJsonMeta().getMessage());
 
-                                availabilityFragment.displayMessage(jsonResponse.getJsonMeta().getMessage());
+                                toast(jsonResponse.getJsonMeta().getMessage());
                             }
                         }
                     }
@@ -246,8 +241,6 @@ public class RequestDialogFragment extends DialogFragment {
 
         String url = AppPreferences.BASE_URL + "/trip" + "/" + mtrip.getId() + "/reject ";
 
-        final AvailabilityFragment availabilityFragment = (AvailabilityFragment) getTargetFragment();
-
         try {
 
             JsonRequestTrip request = new JsonRequestTrip();
@@ -283,13 +276,10 @@ public class RequestDialogFragment extends DialogFragment {
 
                             // check status  code of response
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
-                                // Success Ride Acceptance
-                                availabilityFragment.showRideRejectMessage(true);
+                                toast(R.string.ride_rejected_success);
                             } else {
-                                // Invalid Ride Acceptance
-                                availabilityFragment.showRideRejectMessage(false);
+                                toast(R.string.ride_rejected_error);
                             }
-
 
                             Log.d(TAG, "rejectRide - onResponse - End");
                         }
@@ -313,8 +303,7 @@ public class RequestDialogFragment extends DialogFragment {
 
                                 Log.d(TAG, "rejectRide - Error Status: " + jsonResponse.getJsonMeta().getStatus());
                                 Log.d(TAG, "rejectRide - Error Message: " + jsonResponse.getJsonMeta().getMessage());
-
-                                availabilityFragment.displayMessage(jsonResponse.getJsonMeta().getMessage());
+                                toast(jsonResponse.getJsonMeta().getMessage());
                             }
                         }
                     }
@@ -345,6 +334,18 @@ public class RequestDialogFragment extends DialogFragment {
         RequestDialogFragment.this.dismiss();
 
         Log.d(TAG, "rejectRide - End");
+    }
+
+    private void toast(int messageId) {
+        if (mactivity != null && isAdded()) {
+            toast(getString(messageId));
+        }
+    }
+
+    private void toast(String message) {
+        if (mactivity != null && isAdded()){
+            Toast.makeText(mactivity, message, Toast.LENGTH_LONG).show();
+        }
     }
 
 

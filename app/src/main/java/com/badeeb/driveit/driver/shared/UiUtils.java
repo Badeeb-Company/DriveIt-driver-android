@@ -10,6 +10,8 @@ import android.view.View;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 
+import com.badeeb.driveit.driver.R;
+
 /**
  * Created by meldeeb on 9/21/17.
  */
@@ -45,12 +47,12 @@ public class UiUtils {
         imm.toggleSoftInput(InputMethodManager.SHOW_FORCED, 0);
     }
 
-    public static ProgressDialog createProgressDialog(Context context, int style){
-        return createProgressDialog(context, "Loading. Please wait...", style);
+    public static ProgressDialog createProgressDialog(Context context){
+        return createProgressDialog(context, "Loading. Please wait...");
     }
 
-    public static ProgressDialog createProgressDialog(Context context, String message, int style){
-        ProgressDialog progressDialog = new ProgressDialog(context, style);
+    public static ProgressDialog createProgressDialog(Context context, String message){
+        ProgressDialog progressDialog = new ProgressDialog(context, R.style.DialogTheme);
         progressDialog.setMessage(message);
         progressDialog.setCancelable(false);
         return progressDialog;
