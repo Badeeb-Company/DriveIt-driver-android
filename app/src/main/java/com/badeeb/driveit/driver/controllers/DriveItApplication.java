@@ -3,6 +3,8 @@ package com.badeeb.driveit.driver.controllers;
 import android.app.Application;
 
 import com.badeeb.driveit.driver.shared.AppSettings;
+import com.crashlytics.android.Crashlytics;
+import io.fabric.sdk.android.Fabric;
 
 
 /**
@@ -15,6 +17,7 @@ public class DriveItApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        Fabric.with(this, new Crashlytics());
         sDriverItApplication = this;
     }
 

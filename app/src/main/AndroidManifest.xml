@@ -23,9 +23,11 @@
         android:theme="@style/AppTheme">
         <activity
             android:name=".activity.MainActivity"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:screenOrientation="portrait">
         </activity>
-        <activity android:name=".activity.SplashActivity">
+        <activity android:name=".activity.SplashActivity"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -34,6 +36,9 @@
         </activity>
 
         <service android:name="ForegroundService" android:stopWithTask="true" />
+        <meta-data
+            android:name="io.fabric.ApiKey"
+            android:value="98a3180fa2f0bb9eb2859e45250e0501c054aa9e" />
     </application>
 
 </manifest>
