@@ -37,8 +37,8 @@ public class AppPreferences {
     public static final String USER_INVITED = "2";
 
     // Location updates constants
-    public static final int UPDATE_TIME = 0;    // Millisecoonds
-    public static final int UPDATE_DISTANCE = 0;
+    public static final int UPDATE_TIME = 10 * 1000;    // Millisecoonds
+    public static final int UPDATE_DISTANCE = 10;        // meters
 
     // Splash Screen timeout
     public static final int SPLASH_TIME_OUT = 3000;

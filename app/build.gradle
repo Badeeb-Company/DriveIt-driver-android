@@ -22,13 +22,13 @@ android {
         applicationId "com.badeeb.driveit.driver"
         minSdkVersion 15
         targetSdkVersion 26
-        versionCode 1
+        versionCode 6
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
-            minifyEnabled true
+            minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -48,9 +48,9 @@ dependencies {
     compile 'com.makeramen:roundedimageview:2.3.0'
     compile 'com.android.volley:volley:1.0.0'
     compile 'com.google.code.gson:gson:2.8.0'
-    compile 'com.google.firebase:firebase-database:11.4.0'
-    compile 'com.google.firebase:firebase-storage:11.4.0'
-    compile 'com.google.android.gms:play-services-location:11.4.0'
+    compile 'com.google.firebase:firebase-database:11.0.0'
+    compile 'com.google.firebase:firebase-storage:11.0.0'
+    compile 'com.google.android.gms:play-services-location:11.0.0'
     compile 'org.parceler:parceler-api:1.1.8'
     compile 'com.android.support:support-v4:26.+'
     compile 'com.github.bumptech.glide:glide:3.8.0'

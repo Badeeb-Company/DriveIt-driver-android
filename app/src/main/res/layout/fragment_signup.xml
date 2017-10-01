@@ -110,9 +110,36 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
+                    android:inputType="phone"
                     android:hint="Enter your phone number" />
 
             </android.support.design.widget.TextInputLayout>
+
+            <RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp"
+                android:layout_marginTop="8dp">
+
+                <RadioButton android:id="@+id/rCar"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Car"
+                    android:checked="true"
+                    android:shadowColor="@color/white"
+                    android:textSize="18sp"
+                    android:textColor="@color/white"
+                    android:layout_marginRight="50dp"/>
+
+                <RadioButton android:id="@+id/rBike"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Bike"
+                    android:textSize="18sp"
+                    android:shadowColor="@color/white"
+                    android:textColor="@color/white"/>
+            </RadioGroup>
 
             <Button
                 android:id="@+id/sign_up"

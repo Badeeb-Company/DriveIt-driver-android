@@ -28,7 +28,7 @@ public class ForegroundService extends Service {
             Log.d(TAG, "stop the service..");
             clearForegroundService();
         } else {
-            startForeground(FOREGROUND_SERVICE_ID, generateNotification("Location tracked"));
+            startForeground(FOREGROUND_SERVICE_ID, generateNotification("Your Location is being tracked"));
         }
         return START_NOT_STICKY;
     }

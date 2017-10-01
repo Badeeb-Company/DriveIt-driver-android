@@ -1,11 +1,15 @@
 package com.badeeb.driveit.driver.shared;
 
+import android.app.Activity;
 import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static android.R.attr.fragment;
 
 /**
  * Created by meldeeb on 9/25/17.
@@ -22,9 +26,29 @@ public class PermissionsChecker {
                 toBeGranted.add(permission);
                 granted = false;
             }
+
         }
         if (!granted) {
             fragment.requestPermissions(toBeGranted.toArray(new String[toBeGranted.size()]), requestCode);
+        } else {
+            handler.onPermissionsGranted();
+        }
+    }
+
+    public static void checkPermissions(Activity activity, OnPermissionsGrantedHandler handler, int requestCode,
+                                        String... permissions) {
+        boolean granted = true;
+        List<String> toBeGranted = new ArrayList<>();
+        for (String permission : permissions) {
+            if (ContextCompat.checkSelfPermission(activity, permission) != PackageManager.PERMISSION_GRANTED) {
+                toBeGranted.add(permission);
+                granted = false;
+            }
+        }
+        if (!granted) {
+            ActivityCompat.requestPermissions(activity,
+                    toBeGranted.toArray(new String[toBeGranted.size()]),
+                    requestCode);
         } else {
             handler.onPermissionsGranted();
         }

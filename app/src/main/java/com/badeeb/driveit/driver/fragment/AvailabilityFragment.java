@@ -11,6 +11,7 @@ import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -31,21 +32,14 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
 import com.badeeb.driveit.driver.R;
 import com.badeeb.driveit.driver.activity.MainActivity;
-import com.badeeb.driveit.driver.model.Trip;
 import com.badeeb.driveit.driver.model.JsonDriverStatus;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.badeeb.driveit.driver.shared.AppSettings;
 import com.badeeb.driveit.driver.shared.FirebaseManager;
-import com.badeeb.driveit.driver.shared.NotificationsManager;
 import com.badeeb.driveit.driver.shared.OnPermissionsGrantedHandler;
 import com.badeeb.driveit.driver.shared.PermissionsChecker;
 import com.badeeb.driveit.driver.shared.UiUtils;
-import com.google.android.gms.location.LocationListener;
-import com.google.firebase.database.DataSnapshot;
-import com.google.firebase.database.DatabaseError;
-import com.google.firebase.database.DatabaseReference;
-import com.google.firebase.database.ValueEventListener;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -53,11 +47,9 @@ import android.support.v7.app.AlertDialog;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.parceler.Parcels;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 
 /**
@@ -143,17 +135,14 @@ public class AvailabilityFragment extends Fragment {
         super.onStop();
     }
 
-    @SuppressWarnings({"MissingPermission"})
     private OnPermissionsGrantedHandler createOnLocationPermissionGrantedHandler() {
         return new OnPermissionsGrantedHandler() {
             @Override
             public void onPermissionsGranted() {
-                Log.d(TAG, "Location - onPermissionsGranted - Start");
                 if (checkLocationService()) {
                     Log.d(TAG, "Location - onPermissionsGranted - Set Driver Online");
                     showGoOnlineDialog();
                 }
-                Log.d(TAG, "Location - onPermissionsGranted - End");
             }
         };
     }
@@ -219,6 +208,18 @@ public class AvailabilityFragment extends Fragment {
         });
 
         Log.d(TAG, "setupListeners - End");
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode){
+            case PERM_LOCATION_RQST_CODE:
+                if(PermissionsChecker.permissionsGranted(grantResults)){
+                    onLocationPermissionGrantedHandler.onPermissionsGranted();
+                }
+                break;
+        }
     }
 
     @SuppressWarnings({"MissingPermission"})
@@ -331,7 +332,7 @@ public class AvailabilityFragment extends Fragment {
             Log.d(TAG, "callOnlineApi - Json Request" + gson.toJson(request));
 
             // Call user login service
-            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, url, jsonObject,
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PUT, url, jsonObject,
 
                     new Response.Listener<JSONObject>() {
 
@@ -351,10 +352,9 @@ public class AvailabilityFragment extends Fragment {
 
                             // check status  code of response
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
-                                // Success
-
+                                Toast.makeText(getContext(), "You are now online", Toast.LENGTH_SHORT).show();
                             } else {
-                                // Failure
+                                Toast.makeText(getContext(), "Something wrong happened, please try again", Toast.LENGTH_SHORT).show();
                             }
 
                             Log.d(TAG, "callOnlineApi - onResponse - End");
@@ -431,7 +431,7 @@ public class AvailabilityFragment extends Fragment {
             Log.d(TAG, "callOfflineApi - Json Request" + gson.toJson(request));
 
             // Call offline service
-            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PATCH, url, jsonObject,
+            JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.PUT, url, jsonObject,
 
                     new Response.Listener<JSONObject>() {
 
@@ -451,10 +451,9 @@ public class AvailabilityFragment extends Fragment {
 
                             // check status  code of response
                             if (jsonResponse.getJsonMeta().getStatus().equals("200")) {
-                                // Success
-
+                                Toast.makeText(getContext(), "You are now offline", Toast.LENGTH_SHORT).show();
                             } else {
-                                // Failure
+                                Toast.makeText(getContext(), "Something wrong happened, please try again", Toast.LENGTH_SHORT).show();
                             }
 
                             Log.d(TAG, "callOfflineApi - onResponse - End");

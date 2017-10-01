@@ -46,6 +46,11 @@ public class User {
     @Expose
     @SerializedName("driver_availability")
     private String availability;
+
+    @Expose
+    @SerializedName("driver_type")
+    private String driverType;
+
     @Expose
     @SerializedName("token")
     private String token;
@@ -175,5 +180,13 @@ public class User {
 
     public void setToken(String token) {
         this.token = token;
+    }
+
+    public String getDriverType() {
+        return driverType;
+    }
+
+    public void setDriverType(String driverType) {
+        this.driverType = driverType;
     }
 }

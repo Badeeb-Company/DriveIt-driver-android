@@ -15,7 +15,7 @@ import java.io.InputStream;
 
 public class Utils {
 
-    private static final int MAX_PHOTO_FILE_SIZE = 3 * 1024 * 1024; // 15 MB
+    private static final int MAX_PHOTO_FILE_SIZE = 4 * 1024 * 1024; // 15 MB
 
     public static boolean isAllowedFileSize(Context context, Uri fileUri){
         File file = FileUtils.getFile(context, fileUri);

@@ -1,12 +1,20 @@
 package com.badeeb.driveit.driver.activity;
 
+import android.Manifest;
 import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -41,6 +49,8 @@ import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.badeeb.driveit.driver.shared.AppSettings;
 import com.badeeb.driveit.driver.shared.FirebaseManager;
 import com.badeeb.driveit.driver.shared.NotificationsManager;
+import com.badeeb.driveit.driver.shared.OnPermissionsGrantedHandler;
+import com.badeeb.driveit.driver.shared.PermissionsChecker;
 import com.badeeb.driveit.driver.shared.UiUtils;
 import com.bumptech.glide.Glide;
 import com.google.android.gms.common.ConnectionResult;
@@ -71,6 +81,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     // Logging Purpose
     private final String TAG = MainActivity.class.getSimpleName();
+    private final int PERM_LOCATION_RQST_CODE = 200;
 
     // Class attributes
     private Toolbar mtoolbar;
@@ -82,6 +93,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private RequestDialogFragment mrequestDialogFragment;
     private boolean paused;
     private InvitationStatus invitationStatus;
+    private AlertDialog locationDisabledWarningDialog;
 
     private User mdriver;
     private GoogleApiClient mGoogleApiClient;
@@ -91,6 +103,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private NotificationsManager notificationsManager;
     private ValueEventListener mtripEventListener;
     private DatabaseReference mRefTrip;
+    private LocationManager locationManager;
+    private OnPermissionsGrantedHandler onLocationPermissionGrantedHandler;
+    private LocationChangeReceiver locationChangeReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,6 +130,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         notificationsManager = NotificationsManager.getInstance();
         mtripEventListener = createValueEventListener();
         invitationStatus = InvitationStatus.NONE;
+        onLocationPermissionGrantedHandler = createOnLocationPermissionGrantedHandler();
+        locationChangeReceiver = new LocationChangeReceiver();
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         initGoogleApiClient();
 
 
@@ -139,6 +157,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             if (mdriver.isOnline()) {
                 if (mdriver.isInTrip()) {
                     connectGoogleApiClient();
+                    startForegroundOnlineService();
                     gotToTripDetailsFragment();
                 } else {
                     goToAvialabilityFragment();
@@ -151,6 +170,60 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
 
         Log.d(TAG, "init - End");
+    }
+
+    private OnPermissionsGrantedHandler createOnLocationPermissionGrantedHandler() {
+        return new OnPermissionsGrantedHandler() {
+            @Override
+            public void onPermissionsGranted() {
+                if (checkLocationService()) {
+                    registerLocationUpdate();
+                }
+            }
+        };
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode){
+            case PERM_LOCATION_RQST_CODE:
+                if(PermissionsChecker.permissionsGranted(grantResults)){
+                    onLocationPermissionGrantedHandler.onPermissionsGranted();
+                }
+                break;
+        }
+    }
+
+    private void showGPSDisabledWarningDialog() {
+
+        DialogInterface.OnClickListener positiveListener = new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
+                startActivity(intent);
+            }
+        };
+
+        locationDisabledWarningDialog = UiUtils.showDialog(this, R.style.DialogTheme,
+                R.string.GPS_disabled_warning_title, R.string.GPS_disabled_warning_msg,
+                R.string.ok_btn_dialog, positiveListener);
+
+    }
+
+    private boolean checkLocationService() {
+        boolean gpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
+        if (!gpsEnabled) {
+            if (locationDisabledWarningDialog == null || !locationDisabledWarningDialog.isShowing()) {
+                showGPSDisabledWarningDialog();
+                registerReceiver(locationChangeReceiver, new IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION));
+            }
+        } else {
+            if (locationDisabledWarningDialog != null && locationDisabledWarningDialog.isShowing()) {
+                locationDisabledWarningDialog.dismiss();
+            }
+        }
+        return gpsEnabled;
     }
 
     private void sendNotification() {
@@ -276,7 +349,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
                     @Override
                     public void onConnected(Bundle bundle) {
-                        registerLocationUpdate();
+                        PermissionsChecker.checkPermissions(MainActivity.this, onLocationPermissionGrantedHandler,
+                                PERM_LOCATION_RQST_CODE, Manifest.permission.ACCESS_FINE_LOCATION);
                     }
 
                     @Override
@@ -287,7 +361,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }).addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
                     @Override
                     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
-                        Toast.makeText(MainActivity.this, "API client connection failed", Toast.LENGTH_LONG).show();
+                        Toast.makeText(MainActivity.this, "Please update your Google Play Services to make use of the app",
+                                Toast.LENGTH_LONG).show();
                     }
                 })
                 .build();
@@ -307,7 +382,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Log.d(TAG, "setFirebaseDriverLocation - Start");
 
         DatabaseReference mRef = firebaseManager.createChildReference("locations");
-        mRef.child("drivers").child(mdriver.getId() + "").child("lat").setValue(currentLocation.getLatitude() + new Random().nextInt() % 5 * 0.0000001);
+        mRef.child("drivers").child(mdriver.getId() + "").child("lat").setValue(currentLocation.getLatitude());
         mRef.child("drivers").child(mdriver.getId() + "").child("long").setValue(currentLocation.getLongitude());
 
         Log.d(TAG, "setFirebaseDriverLocation - End");
@@ -526,4 +601,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     private enum InvitationStatus {NONE, AVAILABLE, CANCELLED}
+
+    private final class LocationChangeReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Log.d(TAG, "LocationChangeReceiver - onReceive - Start");
+            if (intent.getAction().equals(LocationManager.PROVIDERS_CHANGED_ACTION)) {
+                checkLocationService();
+                unregisterReceiver(this);
+            }
+            Log.d(TAG, "LocationChangeReceiver - onReceive - End");
+        }
+    }
 }

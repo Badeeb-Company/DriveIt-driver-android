@@ -17,6 +17,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
 import android.widget.Toast;
 
 import com.android.volley.AuthFailureError;
@@ -74,6 +75,9 @@ public class SignupFragment extends Fragment {
     private EditText password;
     private EditText phone;
     private RoundedImageView rivProfilePhoto;
+    private RadioButton rCar;
+    private RadioButton rBike;
+
 
     private ProgressDialog progressDialog;
     // attributes that will be used for JSON calls
@@ -121,6 +125,8 @@ public class SignupFragment extends Fragment {
         password = (EditText) view.findViewById(R.id.password);
         phone = (EditText) view.findViewById(R.id.phone);
         rivProfilePhoto = (RoundedImageView) view.findViewById(R.id.rivProfilePhoto);
+        rCar = (RadioButton) view.findViewById(R.id.rCar);
+        rBike = (RadioButton) view.findViewById(R.id.rBike);
 
         // Setup listeners
         setupListeners(view);
@@ -254,6 +260,11 @@ public class SignupFragment extends Fragment {
         mdriver.setPassword(password.getText().toString());
         mdriver.setPhotoUrl(uploadedPhotoUrl);
         mdriver.setPhoneNumber(phone.getText().toString());
+        if(rCar.isChecked()){
+            mdriver.setDriverType("CAR");
+        } else {
+            mdriver.setDriverType("BIKE");
+        }
 
         try {
 
