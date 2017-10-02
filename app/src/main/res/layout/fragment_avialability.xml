@@ -8,6 +8,8 @@
     android:background="@drawable/main_bk"
     android:clickable="true"
     android:gravity="center"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
     >
 
     <ImageView
