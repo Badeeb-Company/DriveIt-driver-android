@@ -24,6 +24,7 @@
         <activity
             android:name=".activity.MainActivity"
             android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait">
         </activity>
         <activity android:name=".activity.SplashActivity"

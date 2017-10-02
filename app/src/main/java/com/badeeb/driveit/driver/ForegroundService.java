@@ -53,6 +53,7 @@ public class ForegroundService extends Service {
 
     private Notification generateNotification(String message) {
         Intent notificationIntent = new Intent(this, MainActivity.class);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent intent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(DriveItApplication.getInstance());
         notificationBuilder.setAutoCancel(false)

@@ -270,7 +270,6 @@ public class AvailabilityFragment extends Fragment {
         Log.d(TAG, "showGoOfflineDialog - End");
     }
 
-
     private void goOffline() {
         mactivity.removeFirebaseListener();
         changeUiToOffline();
