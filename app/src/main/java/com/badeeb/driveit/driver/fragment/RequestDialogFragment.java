@@ -30,6 +30,7 @@ import com.badeeb.driveit.driver.model.Trip;
 import com.badeeb.driveit.driver.network.MyVolley;
 import com.badeeb.driveit.driver.shared.AppPreferences;
 import com.badeeb.driveit.driver.shared.AppSettings;
+import com.badeeb.driveit.driver.shared.UiUtils;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -191,8 +192,13 @@ public class RequestDialogFragment extends DialogFragment {
                             // Network Error Handling
                             Log.d(TAG, "acceptRide - onErrorResponse: " + error.toString());
 
+                            if (error.networkResponse.statusCode == 401) {
+                                // Authorization issue
+                                UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.login_error, R.string.ok_btn_dialog, null);
 
-                            if (error instanceof ServerError) {
+                                goToLogin();
+
+                            } else if (error instanceof ServerError) {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
 
@@ -292,8 +298,13 @@ public class RequestDialogFragment extends DialogFragment {
                             // Network Error Handling
                             Log.d(TAG, "rejectRide - onErrorResponse: " + error.toString());
 
+                            if (error.networkResponse.statusCode == 401) {
+                                // Authorization issue
+                                UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.login_error, R.string.ok_btn_dialog, null);
 
-                            if (error instanceof ServerError) {
+                                goToLogin();
+
+                            } else if (error instanceof ServerError) {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
 
@@ -366,6 +377,14 @@ public class RequestDialogFragment extends DialogFragment {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
         fragmentTransaction.add(R.id.main_frame, tripDetailsFragment, tripDetailsFragment.TAG);
+        fragmentTransaction.commit();
+    }
+
+    private void goToLogin() {
+        LoginFragment loginFragment = new LoginFragment();
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.main_frame, loginFragment, loginFragment.TAG);
         fragmentTransaction.commit();
     }
 }

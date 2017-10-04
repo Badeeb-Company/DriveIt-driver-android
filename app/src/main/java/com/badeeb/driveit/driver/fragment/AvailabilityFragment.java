@@ -15,6 +15,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -367,7 +368,13 @@ public class AvailabilityFragment extends Fragment {
                             // Network Error Handling
                             Log.d(TAG, "callOnlineApi - onErrorResponse: " + error.toString());
 
-                            if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
+                            if (error instanceof AuthFailureError && error.networkResponse.statusCode == 401) {
+                                // Authorization issue
+                                UiUtils.showDialog(getContext(), R.style.DialogTheme,
+                                        R.string.login_error, R.string.ok_btn_dialog, null);
+                                goToLogin();
+
+                            } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
 
@@ -466,7 +473,13 @@ public class AvailabilityFragment extends Fragment {
                             // Network Error Handling
                             Log.d(TAG, "callOfflineApi - onErrorResponse: " + error.toString());
 
-                            if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
+                            if (error instanceof AuthFailureError && error.networkResponse.statusCode == 401) {
+                                // Authorization issue
+                                UiUtils.showDialog(getContext(), R.style.DialogTheme,
+                                        R.string.login_error, R.string.ok_btn_dialog, null);
+                                goToLogin();
+
+                            } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
 
@@ -510,5 +523,13 @@ public class AvailabilityFragment extends Fragment {
     }
 
     private enum InvitationStatus {NONE, AVAILABLE, CANCELLED}
+
+    private void goToLogin() {
+        LoginFragment loginFragment = new LoginFragment();
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.main_frame, loginFragment, loginFragment.TAG);
+        fragmentTransaction.commit();
+    }
 
 }
