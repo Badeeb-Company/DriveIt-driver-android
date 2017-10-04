@@ -55,6 +55,10 @@ public class User {
     @SerializedName("token")
     private String token;
 
+    @Expose
+    @SerializedName("activated")
+    private boolean isActive;
+
     // Constructor
     public User() {
         this.id = 0;
@@ -188,5 +192,13 @@ public class User {
 
     public void setDriverType(String driverType) {
         this.driverType = driverType;
+    }
+
+    public boolean isActive() {
+        return isActive;
+    }
+
+    public void setActive(boolean active) {
+        isActive = active;
     }
 }

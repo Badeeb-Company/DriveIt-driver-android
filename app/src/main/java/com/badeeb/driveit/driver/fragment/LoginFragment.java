@@ -211,18 +211,24 @@ public class LoginFragment extends Fragment {
                                 mdriver = jsonResponse.getUser();
                                 mactivity.setNavigationViewValues(mdriver);
 
-                                AppSettings settings = AppSettings.getInstance();
-                                settings.saveUser(mdriver);
+                                if (mdriver.isActive()) {
+                                    AppSettings settings = AppSettings.getInstance();
+                                    settings.saveUser(mdriver);
 
-                                ((MainActivity) getActivity()).setDriver(mdriver);
+                                    ((MainActivity) getActivity()).setDriver(mdriver);
 
-                                // Move to avialability fragment
-                                goToAvialabilityFragment();
+                                    // Move to avialability fragment
+                                    goToAvialabilityFragment();
 
-                                View view = getActivity().getCurrentFocus();
-                                if (view != null) {
-                                    InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
-                                    imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                                    View view = getActivity().getCurrentFocus();
+                                    if (view != null) {
+                                        InputMethodManager imm = (InputMethodManager)getActivity().getSystemService(Context.INPUT_METHOD_SERVICE);
+                                        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
+                                    }
+                                }
+                                else {
+                                    UiUtils.showDialog(getContext(), R.style.DialogTheme,
+                                            R.string.account_not_active, R.string.ok_btn_dialog, null);
                                 }
                             }
                             else {
