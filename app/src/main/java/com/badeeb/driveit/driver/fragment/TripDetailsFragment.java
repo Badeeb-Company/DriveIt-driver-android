@@ -225,7 +225,6 @@ public class TripDetailsFragment extends Fragment {
 
                             if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
                                 // Authorization issue
-                                changeDriverStatus();
                                 deactivateAccount();
 
                             } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
@@ -297,8 +296,4 @@ public class TripDetailsFragment extends Fragment {
         goToLogin();
     }
 
-    private void changeDriverStatus() {
-        mactivity.getDriver().setAvailable();
-        settings.saveUser(mactivity.getDriver());
-    }
 }
