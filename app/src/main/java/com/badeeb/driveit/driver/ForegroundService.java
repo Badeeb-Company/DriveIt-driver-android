@@ -5,9 +5,13 @@ package com.badeeb.driveit.driver;
  */
 
 import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
@@ -55,16 +59,40 @@ public class ForegroundService extends Service {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent intent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(DriveItApplication.getInstance());
-        notificationBuilder.setAutoCancel(false)
-                .setWhen(System.currentTimeMillis())
-                .setSmallIcon(R.drawable.notification_icon)
-                .setContentTitle(getString(R.string.app_name))
-                .setContentIntent(intent)
-                .setContentText(message)
-                .setColor(getResources().getColor(R.color.colorAccent));
 
-        return notificationBuilder.build();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            String name = getString(R.string.app_name);
+            String channelName = BuildConfig.APPLICATION_ID;
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel(channelName, name, importance);
+            NotificationManager notificationManager =
+                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            notificationManager.createNotificationChannel(channel);
+
+            Notification.Builder notificationBuilder = new Notification.Builder(DriveItApplication.getInstance());
+            notificationBuilder.setAutoCancel(false)
+                    .setWhen(System.currentTimeMillis())
+                    .setSmallIcon(R.drawable.notification_icon)
+                    .setContentTitle(getString(R.string.app_name))
+                    .setContentIntent(intent)
+                    .setContentText(message)
+                    .setColor(getResources().getColor(R.color.colorAccent))
+                    .setChannelId(channelName)
+                    ;
+            return notificationBuilder.build();
+        } else {
+            NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(DriveItApplication.getInstance());
+            notificationBuilder.setAutoCancel(false)
+                    .setWhen(System.currentTimeMillis())
+                    .setSmallIcon(R.drawable.notification_icon)
+                    .setContentTitle(getString(R.string.app_name))
+                    .setContentIntent(intent)
+                    .setContentText(message)
+                    .setColor(getResources().getColor(R.color.colorAccent));
+
+            return notificationBuilder.build();
+        }
     }
 
     @Override
