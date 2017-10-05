@@ -542,7 +542,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                             // Network Error Handling
                             Log.d(TAG, "logout - onErrorResponse: " + error.toString());
 
-                            if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
+                            if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
+                                // Authorization issue
+                                UiUtils.showDialog(getApplicationContext(), R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
+
+                            } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
 

@@ -1,6 +1,7 @@
 package com.badeeb.driveit.driver.fragment;
 
 
+import android.content.Context;
 import android.os.Bundle;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
@@ -55,6 +56,8 @@ public class RequestDialogFragment extends DialogFragment {
     private Trip mtrip;
     private MainActivity mactivity;
     private FragmentManager fragmentManager;
+    private Context mcontext;
+    private AppSettings settings;
 
     public RequestDialogFragment() {
         // Required empty public constructor
@@ -81,6 +84,8 @@ public class RequestDialogFragment extends DialogFragment {
         this.mtrip = Parcels.unwrap(getArguments().getParcelable("trip"));
         mactivity = (MainActivity) getActivity();
         fragmentManager = getFragmentManager();
+        mcontext = getContext();
+        settings = AppSettings.getInstance();
 
         // Publish values into dialog
         TextView tvName = view.findViewById(R.id.tvName);
@@ -194,9 +199,13 @@ public class RequestDialogFragment extends DialogFragment {
 
                             if (error.networkResponse.statusCode == 401) {
                                 // Authorization issue
-                                UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.login_error, R.string.ok_btn_dialog, null);
+                                UiUtils.showDialog(mcontext, R.style.DialogTheme, R.string.login_error, R.string.ok_btn_dialog, null);
 
                                 goToLogin();
+                                mactivity.removeFirebaseListener();
+                                mactivity.disconnectGoogleApiClient();
+                                settings.clearTripInfo();
+                                settings.clearUserInfo();
 
                             } else if (error instanceof ServerError) {
                                 NetworkResponse response = error.networkResponse;
@@ -298,11 +307,14 @@ public class RequestDialogFragment extends DialogFragment {
                             // Network Error Handling
                             Log.d(TAG, "rejectRide - onErrorResponse: " + error.toString());
 
-                            if (error.networkResponse.statusCode == 401) {
+                            if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
                                 // Authorization issue
-                                UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.login_error, R.string.ok_btn_dialog, null);
-
+                                UiUtils.showDialog(mcontext, R.style.DialogTheme, R.string.login_error, R.string.ok_btn_dialog, null);
                                 goToLogin();
+                                mactivity.removeFirebaseListener();
+                                mactivity.disconnectGoogleApiClient();
+                                settings.clearTripInfo();
+                                settings.clearUserInfo();
 
                             } else if (error instanceof ServerError) {
                                 NetworkResponse response = error.networkResponse;
@@ -382,7 +394,6 @@ public class RequestDialogFragment extends DialogFragment {
 
     private void goToLogin() {
         LoginFragment loginFragment = new LoginFragment();
-        FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.main_frame, loginFragment, loginFragment.TAG);
         fragmentTransaction.commit();

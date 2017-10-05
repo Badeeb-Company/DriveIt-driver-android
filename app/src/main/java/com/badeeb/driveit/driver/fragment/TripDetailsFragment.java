@@ -223,7 +223,16 @@ public class TripDetailsFragment extends Fragment {
                             Log.d(TAG, "tripComplete - onErrorResponse: " + error.toString());
                             progressDialog.dismiss();
 
-                            if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
+                            if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
+                                // Authorization issue
+                                UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
+                                mactivity.removeFirebaseListener();
+                                mactivity.disconnectGoogleApiClient();
+                                settings.clearTripInfo();
+                                settings.clearUserInfo();
+                                goToLogin();
+
+                            } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
                                 String responseData = new String(response.data);
 
@@ -270,6 +279,14 @@ public class TripDetailsFragment extends Fragment {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.main_frame, availabilityFragment, availabilityFragment.TAG);
 //                                fragmentManager.popBackStackImmediate(null, FragmentManager.POP_BACK_STACK_INCLUSIVE);
+        fragmentTransaction.commit();
+    }
+
+    private void goToLogin() {
+        LoginFragment loginFragment = new LoginFragment();
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
+        fragmentTransaction.replace(R.id.main_frame, loginFragment, loginFragment.TAG);
         fragmentTransaction.commit();
     }
 

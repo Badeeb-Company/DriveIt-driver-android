@@ -371,8 +371,12 @@ public class AvailabilityFragment extends Fragment {
                             if (error instanceof AuthFailureError && error.networkResponse.statusCode == 401) {
                                 // Authorization issue
                                 UiUtils.showDialog(getContext(), R.style.DialogTheme,
-                                        R.string.login_error, R.string.ok_btn_dialog, null);
+                                        R.string.account_not_active, R.string.ok_btn_dialog, null);
                                 goToLogin();
+                                mactivity.removeFirebaseListener();
+                                mactivity.disconnectGoogleApiClient();
+                                appSettings.clearUserInfo();
+                                appSettings.clearTripInfo();
 
                             } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
@@ -476,8 +480,12 @@ public class AvailabilityFragment extends Fragment {
                             if (error instanceof AuthFailureError && error.networkResponse.statusCode == 401) {
                                 // Authorization issue
                                 UiUtils.showDialog(getContext(), R.style.DialogTheme,
-                                        R.string.login_error, R.string.ok_btn_dialog, null);
+                                        R.string.account_not_active, R.string.ok_btn_dialog, null);
                                 goToLogin();
+                                mactivity.removeFirebaseListener();
+                                mactivity.disconnectGoogleApiClient();
+                                appSettings.clearUserInfo();
+                                appSettings.clearTripInfo();
 
                             } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
