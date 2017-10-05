@@ -225,12 +225,8 @@ public class TripDetailsFragment extends Fragment {
 
                             if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
                                 // Authorization issue
-                                UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
-                                mactivity.removeFirebaseListener();
-                                mactivity.disconnectGoogleApiClient();
-                                settings.clearTripInfo();
-                                settings.clearUserInfo();
-                                goToLogin();
+                                changeDriverStatus();
+                                deactivateAccount();
 
                             } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
@@ -273,6 +269,7 @@ public class TripDetailsFragment extends Fragment {
 
     }
 
+
     private void goToAvailabilityFragment() {
         AvailabilityFragment availabilityFragment = new AvailabilityFragment();
         FragmentManager fragmentManager = getFragmentManager();
@@ -290,4 +287,18 @@ public class TripDetailsFragment extends Fragment {
         fragmentTransaction.commit();
     }
 
+    private void deactivateAccount() {
+        UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
+        mactivity.stopForegroundOnlineService();
+        mactivity.removeFirebaseListener();
+        mactivity.disconnectGoogleApiClient();
+        settings.clearTripInfo();
+        settings.clearUserInfo();
+        goToLogin();
+    }
+
+    private void changeDriverStatus() {
+        mactivity.getDriver().setAvailable();
+        settings.saveUser(mactivity.getDriver());
+    }
 }

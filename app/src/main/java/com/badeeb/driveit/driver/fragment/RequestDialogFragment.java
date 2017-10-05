@@ -197,15 +197,9 @@ public class RequestDialogFragment extends DialogFragment {
                             // Network Error Handling
                             Log.d(TAG, "acceptRide - onErrorResponse: " + error.toString());
 
-                            if (error.networkResponse.statusCode == 401) {
+                            if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
                                 // Authorization issue
-                                UiUtils.showDialog(mcontext, R.style.DialogTheme, R.string.login_error, R.string.ok_btn_dialog, null);
-
-                                goToLogin();
-                                mactivity.removeFirebaseListener();
-                                mactivity.disconnectGoogleApiClient();
-                                settings.clearTripInfo();
-                                settings.clearUserInfo();
+                                deactivateAccount();
 
                             } else if (error instanceof ServerError) {
                                 NetworkResponse response = error.networkResponse;
@@ -309,12 +303,7 @@ public class RequestDialogFragment extends DialogFragment {
 
                             if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
                                 // Authorization issue
-                                UiUtils.showDialog(mcontext, R.style.DialogTheme, R.string.login_error, R.string.ok_btn_dialog, null);
-                                goToLogin();
-                                mactivity.removeFirebaseListener();
-                                mactivity.disconnectGoogleApiClient();
-                                settings.clearTripInfo();
-                                settings.clearUserInfo();
+                                deactivateAccount();
 
                             } else if (error instanceof ServerError) {
                                 NetworkResponse response = error.networkResponse;
@@ -397,5 +386,16 @@ public class RequestDialogFragment extends DialogFragment {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.replace(R.id.main_frame, loginFragment, loginFragment.TAG);
         fragmentTransaction.commit();
+    }
+
+    private void deactivateAccount() {
+        UiUtils.showDialog(mcontext, R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
+
+        mactivity.stopForegroundOnlineService();
+        mactivity.removeFirebaseListener();
+        mactivity.disconnectGoogleApiClient();
+        settings.clearTripInfo();
+        settings.clearUserInfo();
+        goToLogin();
     }
 }

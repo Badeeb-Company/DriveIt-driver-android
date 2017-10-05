@@ -368,15 +368,9 @@ public class AvailabilityFragment extends Fragment {
                             // Network Error Handling
                             Log.d(TAG, "callOnlineApi - onErrorResponse: " + error.toString());
 
-                            if (error instanceof AuthFailureError && error.networkResponse.statusCode == 401) {
+                            if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
                                 // Authorization issue
-                                UiUtils.showDialog(getContext(), R.style.DialogTheme,
-                                        R.string.account_not_active, R.string.ok_btn_dialog, null);
-                                goToLogin();
-                                mactivity.removeFirebaseListener();
-                                mactivity.disconnectGoogleApiClient();
-                                appSettings.clearUserInfo();
-                                appSettings.clearTripInfo();
+                                deactivateAccount();
 
                             } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
@@ -479,13 +473,7 @@ public class AvailabilityFragment extends Fragment {
 
                             if (error instanceof AuthFailureError && error.networkResponse.statusCode == 401) {
                                 // Authorization issue
-                                UiUtils.showDialog(getContext(), R.style.DialogTheme,
-                                        R.string.account_not_active, R.string.ok_btn_dialog, null);
-                                goToLogin();
-                                mactivity.removeFirebaseListener();
-                                mactivity.disconnectGoogleApiClient();
-                                appSettings.clearUserInfo();
-                                appSettings.clearTripInfo();
+                                deactivateAccount();
 
                             } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
@@ -540,4 +528,13 @@ public class AvailabilityFragment extends Fragment {
         fragmentTransaction.commit();
     }
 
+    private void deactivateAccount() {
+        UiUtils.showDialog(getContext(), R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
+        mactivity.stopForegroundOnlineService();
+        mactivity.removeFirebaseListener();
+        mactivity.disconnectGoogleApiClient();
+        appSettings.clearUserInfo();
+        appSettings.clearTripInfo();
+        goToLogin();
+    }
 }

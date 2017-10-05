@@ -106,6 +106,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private LocationManager locationManager;
     private OnPermissionsGrantedHandler onLocationPermissionGrantedHandler;
     private LocationChangeReceiver locationChangeReceiver;
+    private Context mcontext;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         locationChangeReceiver = new LocationChangeReceiver();
         locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         initGoogleApiClient();
-
+        mcontext = this;
 
         // Toolbar
         mtoolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -544,7 +545,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
                             if (error.networkResponse != null && error.networkResponse.statusCode == 401) {
                                 // Authorization issue
-                                UiUtils.showDialog(getApplicationContext(), R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
+                                UiUtils.showDialog(mcontext, R.style.DialogTheme, R.string.account_not_active, R.string.ok_btn_dialog, null);
 
                             } else if (error instanceof ServerError && error.networkResponse.statusCode != 404) {
                                 NetworkResponse response = error.networkResponse;
