@@ -54,10 +54,14 @@ import com.badeeb.driveit.driver.shared.PermissionsChecker;
 import com.badeeb.driveit.driver.shared.UiUtils;
 import com.bumptech.glide.Glide;
 import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.ui.PlacePicker;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -70,18 +74,14 @@ import org.json.JSONObject;
 import org.parceler.Parcels;
 
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
-import java.util.Random;
-
-import static java.security.AccessController.getContext;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
 
     // Logging Purpose
     private final String TAG = MainActivity.class.getSimpleName();
     private final int PERM_LOCATION_RQST_CODE = 200;
+    private static final int PLACE_PICKER_REQUEST = 10011;
 
     // Class attributes
     private Toolbar mtoolbar;
@@ -194,6 +194,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
                 break;
         }
+    }
+
+    public Location getCurrentLocation(){
+        return currentLocation;
     }
 
     private void showGPSDisabledWarningDialog() {
@@ -404,7 +408,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
         } else {
-            super.onBackPressed();
+            if(msettings.getUser() == null || !msettings.getUser().isOnline()){
+                super.onBackPressed();
+            }
         }
     }
 
@@ -433,6 +439,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 logout();
                 goToLogin();
             }
+        } else if(id == R.id.nav_calculate_price){
+            if(!msettings.getUser().isOnline() || currentLocation == null){
+                Toast.makeText(mcontext, "Please set yourself online first", Toast.LENGTH_SHORT).show();
+            } else {
+                PlacePicker.IntentBuilder builder = new PlacePicker.IntentBuilder();
+                try {
+                    startActivityForResult(builder.build(this), PLACE_PICKER_REQUEST);
+                } catch (GooglePlayServicesRepairableException e) {
+                    e.printStackTrace();
+                    Toast.makeText(this, "Please update google play services", Toast.LENGTH_SHORT).show();
+                } catch (GooglePlayServicesNotAvailableException e) {
+                    e.printStackTrace();
+                    Toast.makeText(this, "Please update google play services", Toast.LENGTH_SHORT).show();
+                }
+            }
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -441,6 +462,40 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         Log.d(TAG, "onNavigationItemSelected - End");
 
         return true;
+    }
+
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (requestCode == PLACE_PICKER_REQUEST) {
+            if (resultCode == RESULT_OK) {
+                Place place = PlacePicker.getPlace(data, this);
+                if(place != null && place.getLatLng() != null) {
+                    float[] distanceArray = new float[1];
+                    Location.distanceBetween(getCurrentLocation().getLatitude(),
+                            getCurrentLocation().getLongitude(),
+                            place.getLatLng().latitude, place.getLatLng().longitude, distanceArray);
+                    double distanceInKm = Math.floor(distanceArray[0]) / 1000;
+                    double price = calculatePrice(distanceInKm);
+
+                    AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.DialogTheme);
+                    builder.setMessage("Distance: " + distanceInKm + " km\nPrice: " + price + "$");
+                    builder.setTitle("Delivery Price");
+                    builder.setPositiveButton("Ok", null);
+                    AlertDialog dialog = builder.create();
+                    dialog.show();
+                } else {
+                    Toast.makeText(this, "Error while finding location, please try again", Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
+
+    private double calculatePrice(double distance){
+        if(distance < 1.5){
+            return 2.5;
+        } else {
+            return 2.5 + 1 * Math.ceil(distance - 1.5);
+        }
     }
 
     private void gotToTripDetailsFragment() {
@@ -489,6 +544,9 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
 
     public User getDriver() {
+        if(mdriver == null){
+            mdriver = msettings.getUser();
+        }
         return mdriver;
     }
 
